@@ -1,0 +1,248 @@
+@import 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css';
+
+:root {
+  --success: #198754;
+  --light: #f8f9fa;
+  --dark: #212529;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  line-height: 1.6;
+}
+
+/* Header Styles */
+.logo-container {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-icon {
+  font-size: 1.2rem;
+}
+
+.nav-desktop .nav-link {
+  color: white !important;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.nav-desktop .nav-link:hover,
+.nav-desktop .nav-link.active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Mobile Menu */
+.mobile-nav-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  color: var(--dark);
+}
+
+.mobile-nav-item:hover,
+.mobile-nav-item.active {
+  background: #e9ecef;
+}
+
+.nav-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--success);
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  color: white;
+}
+
+.nav-text span {
+  display: block;
+  font-weight: 500;
+}
+
+.nav-text small {
+  font-size: 0.75rem;
+}
+
+/* Hero Section */
+.hero-section {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  min-height: 70vh;
+  display: flex;
+  align-items: center;
+}
+
+.min-vh-50 {
+  min-height: 50vh;
+}
+
+/* Animations */
+.animate-fade-in {
+  animation: fadeIn 1s ease-in;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Floating Elements */
+.floating-elements {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.floating-element {
+  position: absolute;
+  background: var(--success);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: float 3s ease-in-out infinite;
+}
+
+.element-2 {
+  width: 60px;
+  height: 60px;
+  top: -20px;
+  right: -20px;
+  animation-delay: 1s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+/* Section Styles */
+.section-title {
+  font-weight: 700;
+  color: var(--success);
+  margin-bottom: 1rem;
+}
+
+.section-subtitle {
+  color: #6c757d;
+  font-size: 1.1rem;
+}
+
+/* Poli Cards */
+.poli-card {
+  transition: all 0.3s ease;
+  border: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  height: 100%;
+  cursor: pointer;
+}
+
+.poli-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+}
+
+.poli-icon {
+  width: 80px;
+  height: 80px;
+  background: var(--success);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  color: white;
+  font-size: 2rem;
+}
+
+/* Contact Cards */
+.contact-card {
+  border: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.contact-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Footer */
+.social-links a {
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.social-links a:hover {
+  transform: translateY(-2px);
+}
+
+/* Modal Styles */
+.modal-action-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .modal-action-buttons {
+    flex-direction: column;
+  }
+  
+  .hero-section {
+    min-height: 50vh;
+    text-align: center;
+  }
+  
+  .display-4 {
+    font-size: 2.5rem;
+  }
+}
+
+/* Sticky Header */
+.sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+}
+
+/* Custom cursor pointer */
+.cursor-pointer {
+  cursor: pointer;
+}
