@@ -1,27 +1,4 @@
-export default function KontakSection() {
-  const contactItems = [
-    {
-      icon: 'fas fa-map-marker-alt',
-      title: 'Alamat',
-      content: 'Jl. Raya Cicalengka No. 123, Kec. Cicalengka, Kab. Bandung, Jawa Barat 40395'
-    },
-    {
-      icon: 'fas fa-phone',
-      title: 'Telepon',
-      content: '(022) 1234567\n081234567890 (WhatsApp)'
-    },
-    {
-      icon: 'fas fa-envelope',
-      title: 'Email',
-      content: 'puskesmas.cicalengka@email.com'
-    },
-    {
-      icon: 'fas fa-clock',
-      title: 'Jam Operasional',
-      content: 'Senin - Jumat: 07.00 - 16.00\nSabtu: 07.00 - 14.00\nUGD: 24 Jam'
-    }
-  ]
-
+export default function KontakSelection() {
   return (
     <section id="kontak" className="py-5">
       <div className="container">
@@ -30,20 +7,45 @@ export default function KontakSection() {
           <p className="section-subtitle">Kami siap melayani kebutuhan kesehatan Anda</p>
         </div>
         <div className="row">
-          {contactItems.map((item, index) => (
-            <div key={index} className="col-md-6 mb-4">
-              <div 
-                className="card h-100 contact-card animate-slide-up" 
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className="card-body text-center">
-                  <i className={`${item.icon} fa-2x text-success mb-3`}></i>
-                  <h5>{item.title}</h5>
-                  <p style={{ whiteSpace: 'pre-line' }}>{item.content}</p>
-                </div>
+          <div className="col-md-6 mb-4">
+            <div className="card h-100 contact-card animate-slide-up">
+              <div className="card-body text-center">
+                <i className="fas fa-map-marker-alt fa-2x text-success mb-3"></i>
+                <h5>Alamat</h5>
+                <p>Jl. Raya Cicalengka No. 123, Kec. Cicalengka, Kab. Bandung, Jawa Barat 40395</p>
               </div>
             </div>
-          ))}
+          </div>
+          <div className="col-md-6 mb-4">
+            <div className="card h-100 contact-card animate-slide-up" style={{animationDelay: '0.1s'}}>
+              <div className="card-body text-center">
+                <i className="fas fa-phone fa-2x text-success mb-3"></i>
+                <h5>Telepon</h5>
+                <p>(022) 1234567</p>
+                <p>081234567890 (WhatsApp)</p>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-6 mb-4">
+            <div className="card h-100 contact-card animate-slide-up" style={{animationDelay: '0.2s'}}>
+              <div className="card-body text-center">
+                <i className="fas fa-envelope fa-2x text-success mb-3"></i>
+                <h5>Email</h5>
+                <p>puskesmas.cicalengka@email.com</p>
+              </div>
+            </div>
+          </div>
+          <div className="col-md-6 mb-4">
+            <div className="card h-100 contact-card animate-slide-up" style={{animationDelay: '0.3s'}}>
+              <div className="card-body text-center">
+                <i className="fas fa-clock fa-2x text-success mb-3"></i>
+                <h5>Jam Operasional</h5>
+                <p>Senin - Jumat: 07.00 - 16.00</p>
+                <p>Sabtu: 07.00 - 14.00</p>
+                <p>UGD: 24 Jam</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
