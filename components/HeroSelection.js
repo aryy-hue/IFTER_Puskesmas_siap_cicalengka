@@ -1,4 +1,4 @@
-export default function HeroSelection() {
+export default function HeroSection() {
   return (
     <section className="hero-section">
       <div className="container">
@@ -14,7 +14,7 @@ export default function HeroSelection() {
           <div className="col-lg-6">
             <div className="position-relative">
               <img 
-                src="/puskesmas.jpg" 
+                src="public/img/puskesmas.jpg" 
                 alt="Puskesmas Cicalengka" 
                 className="img-fluid rounded shadow-lg"
               />
