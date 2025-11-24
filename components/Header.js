@@ -65,7 +65,7 @@ export default function Header() {
                 <i className="fas fa-heartbeat logo-icon"></i>
               </div>
               <div>
-                <h5 className="offcanvas-title mb-0 fw-bold">SIAPCicalengka</h5>
+                <h5 className="offcanvas-title mb-0 fw-bold text-white">SIAPCicalengka</h5>
                 <small className="text-light">Puskesmas Cicalengka</small>
               </div>
             </div>
