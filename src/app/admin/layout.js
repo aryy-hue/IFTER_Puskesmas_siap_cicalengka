@@ -1,15 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 export default function AdminLayout({ children }) {
   const pathname = usePathname()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
+
+  // Hindari hydration error dengan menunggu component mount di client
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   const menuItems = [
     {
-      name: 'Dashboard',
+      name: 'Beranda',
       href: '/admin',
       icon: 'fas fa-tachometer-alt'
     },
@@ -30,56 +37,85 @@ export default function AdminLayout({ children }) {
     }
   ]
 
+  // Helper function untuk cek active menu
+  const isActive = (href) => {
+    if (!isMounted) return false
+    return pathname === href
+  }
+
   return (
     <div className="d-flex flex-column min-vh-100">
-      {/* Header dengan Navigation */}
-      <header className="bg-success text-white shadow">
-        {/* Top Header */}
-        <div className="py-2">
-          <div className="container">
-            <div className="d-flex justify-content-between align-items-center">
-              <div className="d-flex align-items-center">
-                <div className="logo-container me-3">
-                  <i className="fas fa-heartbeat logo-icon"></i>
-                </div>
-                <div>
-                  <h1 className="h4 mb-0 fw-bold">SIAPCICALENGKA</h1>
-                  <small className="text-light">Puskesmas Cicalengka - Admin Panel</small>
-                </div>
+      {/* Header */}
+      <header className="bg-success text-white py-3 shadow sticky-top">
+        <div className="container">
+          <div className="d-flex justify-content-between align-items-center">
+            <div className="d-flex align-items-center">
+              <div className="logo-container me-3">
+                <i className="fas fa-heartbeat logo-icon"></i>
               </div>
-              
-              <div className="d-flex align-items-center">
-                <span className="me-3 d-none d-md-block">
-                  <i className="fas fa-user-circle me-1"></i>Halo, Admin!
-                </span>
-                <Link href="/" className="btn btn-outline-light btn-sm">
-                  <i className="fas fa-sign-out-alt me-1"></i>Logout
-                </Link>
+              <div>
+                <h1 className="h4 mb-0 fw-bold">SIAPCICALENGKA</h1>
+                <small className="text-light">Puskesmas Cicalengka</small>
               </div>
+            </div>
+            
+            {/* Desktop Navigation - Menu Admin */}
+            <nav className="d-none d-lg-block">
+              <ul className="navbar-nav d-flex flex-row gap-3">
+                <li className="nav-item">
+                  <Link 
+                    className={`nav-link text-white d-flex align-items-center py-2 px-3 rounded ${
+                      isActive('/admin') ? 'active' : ''
+                    }`} 
+                    href="/admin"
+                  >
+                    <i className="fas fa-tachometer-alt me-2"></i>
+                    <span>Beranda</span>
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link 
+                    className={`nav-link text-white d-flex align-items-center py-2 px-3 rounded ${
+                      isActive('/admin/kegiatan') ? 'active' : ''
+                    }`} 
+                    href="/admin/kegiatan"
+                  >
+                    <i className="fas fa-calendar-alt me-2"></i>
+                    <span>Kelola Kegiatan</span>
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link 
+                    className={`nav-link text-white d-flex align-items-center py-2 px-3 rounded ${
+                      isActive('/admin/laporan') ? 'active' : ''
+                    }`} 
+                    href="/admin/laporan"
+                  >
+                    <i className="fas fa-file-alt me-2"></i>
+                    <span>Laporan</span>
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link text-white d-flex align-items-center py-2 px-3 rounded login-btn" href="/login">
+                    <i className="fas fa-sign-out-alt me-2"></i>
+                    <span>Logout</span>
+                  </Link>
+                </li>
+              </ul>
+            </nav>
+
+            {/* Mobile Menu Button */}
+            <div className="d-lg-none">
+              <button 
+                className="btn btn-outline-light border-0" 
+                type="button"
+                onClick={() => setMobileMenuOpen(true)}
+              >
+                <i className="fas fa-bars fa-lg"></i>
+              </button>
             </div>
           </div>
         </div>
-
-        {/* Navigation Menu */}
-        <nav className="bg-success-dark">
-          <div className="container">
-            <div className="nav-scroller">
-              <ul className="nav nav-underline">
-                {menuItems.map((item) => (
-                  <li key={item.href} className="nav-item">
-                    <Link
-                      href={item.href}
-                      className={`nav-link text-white ${pathname === item.href ? 'active' : ''}`}
-                    >
-                      <i className={`${item.icon} me-2`}></i>
-                      {item.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </nav>
       </header>
 
       {/* Main Content */}
@@ -88,6 +124,78 @@ export default function AdminLayout({ children }) {
           {children}
         </div>
       </main>
+
+{/* Mobile Menu - hanya render di client setelah mount */}
+{isMounted && mobileMenuOpen && (
+  <div className="offcanvas offcanvas-end show" tabIndex="-1" style={{visibility: 'visible', position: 'fixed'}}>
+    <div className="offcanvas-header bg-success text-white">
+      <div className="d-flex align-items-center">
+        <div className="logo-container me-3">
+          <i className="fas fa-heartbeat logo-icon"></i>
+        </div>
+        <div>
+          <h5 className="offcanvas-title mb-0 fw-bold text-white">SIAPCicalengka</h5>
+          <small className="text-light">Puskesmas Cicalengka</small>
+        </div>
+      </div>
+      <button 
+        type="button" 
+        className="btn-close btn-close-white" 
+        onClick={() => setMobileMenuOpen(false)}
+      ></button>
+    </div>
+    <div className="offcanvas-body">
+      <nav className="navbar-nav">
+        <div className="nav-section mb-4">
+          <h6 className="text-muted mb-3 px-3">MENU ADMIN</h6>       
+          {/* Menu Admin Tambahan */}
+          <Link className="nav-link mobile-nav-item" href="/admin/kegiatan" onClick={() => setMobileMenuOpen(false)}>
+            <div className="nav-icon">
+              <i className="fas fa-calendar-alt"></i>
+            </div>
+            <div className="nav-text">
+              <span>Kelola Kegiatan</span>
+              <small className="text-muted">Manajemen kegiatan</small>
+            </div>
+          </Link>
+          
+          <Link className="nav-link mobile-nav-item" href="/admin/laporan" onClick={() => setMobileMenuOpen(false)}>
+            <div className="nav-icon">
+              <i className="fas fa-file-alt"></i>
+            </div>
+            <div className="nav-text">
+              <span>Buat Laporan</span>
+              <small className="text-muted">Buat laporan baru</small>
+            </div>
+          </Link>
+          
+          <Link className="nav-link mobile-nav-item" href="/admin/riwayat-pasien" onClick={() => setMobileMenuOpen(false)}>
+            <div className="nav-icon">
+              <i className="fas fa-history"></i>
+            </div>
+            <div className="nav-text">
+              <span>Riwayat Pasien</span>
+              <small className="text-muted">Data riwayat pasien</small>
+            </div>
+          </Link>
+        </div>
+
+        <div className="nav-section">
+          <h6 className="text-muted mb-3 px-3">AKUN</h6>
+          <Link className="nav-link mobile-nav-item login-mobile" href="/login" onClick={() => setMobileMenuOpen(false)}>
+            <div className="nav-icon">
+              <i className="fas fa-sign-out-alt"></i>
+            </div>
+            <div className="nav-text">
+              <span>Logout</span>
+              <small className="text-muted">Keluar Akun</small>
+            </div>
+          </Link>
+        </div>
+      </nav>
+    </div>
+  </div>
+)}
 
       {/* Footer */}
       <footer className="bg-dark text-white py-4 mt-auto">
@@ -136,47 +244,6 @@ export default function AdminLayout({ children }) {
           </div>
         </div>
       </footer>
-
-      <style jsx>{`
-        .bg-success-dark {
-          background-color: #146c43 !important;
-        }
-        
-        .nav-scroller {
-          position: relative;
-          z-index: 2;
-          height: 2.75rem;
-          overflow-y: hidden;
-        }
-        
-        .nav-scroller .nav {
-          display: flex;
-          flex-wrap: nowrap;
-          padding-bottom: 1rem;
-          margin-top: -1px;
-          overflow-x: auto;
-          text-align: center;
-          white-space: nowrap;
-          -webkit-overflow-scrolling: touch;
-        }
-        
-        .nav-link {
-          padding: 0.75rem 1rem;
-          border-bottom: 3px solid transparent;
-          transition: all 0.3s ease;
-        }
-        
-        .nav-link:hover {
-          border-bottom-color: rgba(255, 255, 255, 0.5);
-          background-color: rgba(255, 255, 255, 0.1);
-        }
-        
-        .nav-link.active {
-          border-bottom-color: #fff;
-          background-color: rgba(255, 255, 255, 0.1);
-          font-weight: 600;
-        }
-      `}</style>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import TambahKegiatan from '../../../../components/TambahKegiatan';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -8,6 +9,8 @@ export default function AdminDashboard() {
     totalLaporan: 0,
     totalPasien: 0
   })
+
+  const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
     // Simulasi data statistik
@@ -17,6 +20,20 @@ export default function AdminDashboard() {
       totalPasien: 124
     })
   }, [])
+
+  const handleTambahKegiatan = () => {
+    setShowModal(true)
+  }
+
+  const handleCloseModal = () => {
+    setShowModal(false)
+  }
+
+  const handleSuccess = () => {
+    // Refresh data atau tampilkan notifikasi
+    console.log('Kegiatan berhasil ditambahkan')
+    // Bisa tambahkan toast notification di sini
+  }
 
   return (
     <div>
@@ -83,9 +100,12 @@ export default function AdminDashboard() {
             <div className="card-body">
               <div className="row">
                 <div className="col-md-3 mb-3">
-                  <a href="/admin/kegiatan" className="btn btn-outline-primary w-100">
+                  <button 
+                    className="btn btn-outline-primary w-100"
+                    onClick={handleTambahKegiatan}
+                  >
                     <i className="fas fa-plus me-2"></i>Tambah Kegiatan
-                  </a>
+                  </button>
                 </div>
                 <div className="col-md-3 mb-3">
                   <a href="/admin/laporan" className="btn btn-outline-success w-100">
@@ -107,6 +127,13 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Modal Tambah Kegiatan */}
+      <TambahKegiatan 
+        show={showModal}
+        onClose={handleCloseModal}
+        onSuccess={handleSuccess}
+      />
     </div>
   )
 }
