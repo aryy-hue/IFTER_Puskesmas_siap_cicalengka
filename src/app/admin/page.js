@@ -24,6 +24,13 @@ export default function AdminDashboard() {
 
   const quickActions = [
     {
+      title: 'Approval Dokter',
+      description: 'Verifikasi akun dokter baru',
+      icon: 'fas fa-user-check',
+      href: '/admin/approval-dokter', // Link ke halaman approval
+      color: 'danger' // Warna merah agar mencolok
+    },
+    {
       title: 'Tambah Kegiatan',
       description: 'Buat kegiatan baru puskesmas',
       icon: 'fas fa-calendar-plus',
@@ -149,7 +156,7 @@ export default function AdminDashboard() {
             <div className="card-body">
               <div className="row">
                 {quickActions.map((action, index) => (
-                  <div key={index} className="col-md-6 col-lg-3 mb-3">
+                  <div key={index} className="col-md-6 col-lg-4 mb-3">
                     <Link 
                       href={action.href} 
                       className="card action-card h-100 text-decoration-none border-0 shadow-sm"

@@ -23,7 +23,7 @@ export default function Header() {
             
             {/* Desktop Navigation */}
             <nav className="d-none d-lg-block">
-              <ul className="navbar-nav nav-desktop d-flex flex-row">
+              <ul className="navbar-nav nav-desktop d-flex flex-row align-items-center">
                 <li className="nav-item">
                   <Link className="nav-link active" href="/">
                     <i className="fas fa-home me-1"></i>Beranda
@@ -37,6 +37,12 @@ export default function Header() {
                 <li className="nav-item">
                   <Link className="nav-link login-btn" href="/login">
                     <i className="fas fa-user me-1"></i>Login
+                  </Link>
+                </li>
+                {/* TOMBOL REGISTER DESKTOP */}
+                <li className="nav-item ms-2">
+                  <Link className="btn btn-light text-success fw-bold rounded-pill px-4" href="/register/pasien">
+                    <i className="fas fa-user-plus me-1"></i>Daftar
                   </Link>
                 </li>
               </ul>
@@ -102,11 +108,22 @@ export default function Header() {
                 <h6 className="text-muted mb-3 px-3">AKUN</h6>
                 <Link className="nav-link mobile-nav-item login-mobile" href="/login" onClick={() => setMobileMenuOpen(false)}>
                   <div className="nav-icon">
-                    <i className="fas fa-user"></i>
+                    <i className="fas fa-sign-in-alt"></i>
                   </div>
                   <div className="nav-text">
                     <span>Login</span>
                     <small className="text-muted">Masuk Akun</small>
+                  </div>
+                </Link>
+                
+                {/* MENU REGISTER MOBILE */}
+                <Link className="nav-link mobile-nav-item" href="/register/pasien" onClick={() => setMobileMenuOpen(false)}>
+                  <div className="nav-icon">
+                    <i className="fas fa-user-plus"></i>
+                  </div>
+                  <div className="nav-text">
+                    <span>Daftar Akun</span>
+                    <small className="text-muted">Buat akun baru</small>
                   </div>
                 </Link>
               </div>
