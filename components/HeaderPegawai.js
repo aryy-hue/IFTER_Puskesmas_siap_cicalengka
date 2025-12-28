@@ -35,13 +35,13 @@ export default function Header() {
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link login-btn" href="/login">
+                  <Link className="nav-link login-btn" href="/login/login-pegawai">
                     <i className="fas fa-user me-1"></i>Login
                   </Link>
                 </li>
                 {/* TOMBOL REGISTER DESKTOP */}
                 <li className="nav-item ms-2">
-                  <Link className="btn btn-light text-success fw-bold rounded-pill px-4" href="/register">
+                  <Link className="btn btn-light text-success fw-bold rounded-pill px-4" href="/register/pegawai">
                     <i className="fas fa-user-plus me-1"></i>Daftar
                   </Link>
                 </li>
