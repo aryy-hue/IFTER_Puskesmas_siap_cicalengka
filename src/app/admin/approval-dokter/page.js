@@ -6,7 +6,7 @@ export default function ApprovalDokterPage() {
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [processingId, setProcessingId] = useState(null) // Untuk loading tombol
+  const [processingId, setProcessingId] = useState(null)
 
   // 1. Fetch Data dari Backend
   const fetchRequests = async () => {
@@ -14,13 +14,14 @@ export default function ApprovalDokterPage() {
       const token = localStorage.getItem('token')
       if (!token) throw new Error('Token tidak ditemukan')
 
-      const res = await fetch('http://localhost:5000/api/admin/approvals/doctors', {
+      // PERUBAHAN 1: URL Endpoint & Port 5001
+      const res = await fetch('http://localhost:5001/api/superadmin/role-approvals', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
 
-      if (!res.ok) throw new Error('Gagal mengambil data')
+      if (!res.ok) throw new Error('Gagal mengambil data atau Anda bukan Superadmin')
 
       const data = await res.json()
       setRequests(data)
@@ -36,29 +37,41 @@ export default function ApprovalDokterPage() {
   }, [])
 
   // 2. Fungsi Approve/Reject
-  const handleAction = async (approvalId, action) => {
-    if(!confirm(`Yakin ingin ${action === 'approve' ? 'menyetujui' : 'menolak'} dokter ini?`)) return;
+  const handleAction = async (approvalId, actionType) => {
+    const isApprove = actionType === 'approve'
+    const textIndo = isApprove ? 'menyetujui' : 'menolak'
+    
+    if(!confirm(`Yakin ingin ${textIndo} permintaan ini?`)) return;
 
     setProcessingId(approvalId)
     
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch(`http://localhost:5000/api/admin/approvals/${approvalId}`, {
-        method: 'PUT',
+      
+      // PERUBAHAN 2: Mapping status agar sesuai Enum Database ('disetujui' / 'ditolak')
+      const statusBackend = isApprove ? 'disetujui' : 'ditolak'
+
+      // PERUBAHAN 3: URL Endpoint Update
+      const res = await fetch(`http://localhost:5001/api/superadmin/approve-role/${approvalId}`, {
+        method: 'PUT', // Backend menggunakan PUT
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ action })
+        body: JSON.stringify({ 
+          status: statusBackend,
+          alasan: isApprove ? 'Disetujui oleh Admin' : 'Data tidak sesuai' // Opsional
+        })
       })
 
       const result = await res.json()
 
-      if (!res.ok) throw new Error(result.message)
+      if (!res.ok) throw new Error(result.message || 'Gagal memproses')
 
-      alert(result.message)
-      // Refresh list setelah aksi sukses
-      fetchRequests() 
+      alert(`Berhasil: ${result.message}`)
+      
+      // Refresh list: Hapus item yang sudah diproses dari state agar tidak perlu fetch ulang
+      setRequests(prev => prev.filter(item => item.id !== approvalId))
 
     } catch (err) {
       alert(err.message)
@@ -68,16 +81,16 @@ export default function ApprovalDokterPage() {
   }
 
   if (loading) return <div className="text-center py-5"><div className="spinner-border text-success"></div></div>
-  if (error) return <div className="alert alert-danger m-4">{error}</div>
+  if (error) return <div className="alert alert-danger m-4">Error: {error}</div>
 
   return (
     <div className="container-fluid">
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h1 className="h3 mb-1 text-success">Verifikasi Dokter</h1>
-          <p className="text-muted">Daftar dokter baru yang menunggu persetujuan</p>
+          <p className="text-muted">Daftar permintaan role dokter yang menunggu persetujuan</p>
         </div>
-        <button className="btn btn-outline-secondary" onClick={fetchRequests}>
+        <button className="btn btn-outline-secondary" onClick={() => { setLoading(true); fetchRequests(); }}>
           <i className="fas fa-sync-alt me-1"></i> Refresh
         </button>
       </div>
@@ -88,10 +101,10 @@ export default function ApprovalDokterPage() {
             <table className="table table-hover align-middle mb-0">
               <thead className="bg-light">
                 <tr>
-                  <th className="ps-4">Foto</th>
-                  <th>Nama Lengkap</th>
+                  <th className="ps-4">Pemohon</th>
                   <th>Username</th>
-                  <th>Tanggal Daftar</th>
+                  <th>Role Diminta</th>
+                  <th>Tanggal Request</th>
                   <th className="text-end pe-4">Aksi</th>
                 </tr>
               </thead>
@@ -107,31 +120,41 @@ export default function ApprovalDokterPage() {
                   requests.map((req) => (
                     <tr key={req.id}>
                       <td className="ps-4">
-                        <img 
-                          src={req.img || '/img/default-avatar.png'} 
-                          alt="Avatar" 
-                          className="rounded-circle border"
-                          width="45" height="45"
-                          style={{objectFit: 'cover'}}
-                        />
+                        <div className="d-flex align-items-center">
+                           {/* Placeholder Avatar */}
+                          <div className="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style={{width: 40, height: 40}}>
+                            {req.full_name ? req.full_name.charAt(0).toUpperCase() : '?'}
+                          </div>
+                          <div>
+                            <div className="fw-bold">{req.full_name}</div>
+                            <small className="text-muted">ID User: {req.user_id}</small>
+                          </div>
+                        </div>
                       </td>
-                      <td className="fw-bold">{req.full_name}</td>
-                      <td className="text-muted">@{req.username}</td>
-                      <td>{new Date(req.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
+                      <td>@{req.username}</td>
+                      <td>
+                        <span className="badge bg-info text-dark">
+                          {req.role_baru || 'dokter'}
+                        </span>
+                      </td>
+                      <td>
+                        {/* Handling tanggal jika null */}
+                        {req.tanggal ? new Date(req.tanggal).toLocaleDateString('id-ID') : '-'}
+                      </td>
                       <td className="text-end pe-4">
                         <button 
                           className="btn btn-success btn-sm me-2"
                           onClick={() => handleAction(req.id, 'approve')}
                           disabled={processingId === req.id}
                         >
-                          {processingId === req.id ? '...' : <><i className="fas fa-check me-1"></i>Setuju</>}
+                          {processingId === req.id ? '...' : <><i className="fas fa-check me-1"></i> Terima</>}
                         </button>
                         <button 
                           className="btn btn-danger btn-sm"
                           onClick={() => handleAction(req.id, 'reject')}
                           disabled={processingId === req.id}
                         >
-                          <i className="fas fa-times me-1"></i>Tolak
+                          <i className="fas fa-times me-1"></i> Tolak
                         </button>
                       </td>
                     </tr>

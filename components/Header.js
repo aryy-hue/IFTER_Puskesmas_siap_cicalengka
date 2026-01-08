@@ -41,7 +41,7 @@ export default function Header() {
                 </li>
                 {/* TOMBOL REGISTER DESKTOP */}
                 <li className="nav-item ms-2">
-                  <Link className="btn btn-light text-success fw-bold rounded-pill px-4" href="/register">
+                  <Link className="btn btn-light text-success fw-bold rounded-pill px-4" href="/register/pasien">
                     <i className="fas fa-user-plus me-1"></i>Daftar
                   </Link>
                 </li>
