@@ -44,7 +44,7 @@ export default function KelolaKegiatanPage() {
   const fetchKegiatan = async () => {
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch('http://localhost:5000/api/kegiatan', {
+      const res = await fetch('http://localhost:5001/api/kegiatan', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       if (!res.ok) throw new Error('Gagal mengambil data kegiatan')
@@ -160,19 +160,22 @@ export default function KelolaKegiatanPage() {
             data.append('detail_kegiatan', laporanData.detail_kegiatan)
             if (laporanData.file) data.append('img', laporanData.file)
 
-            // const res = await fetch('http://localhost:5000/api/laporan', ...)
+            // const res = await fetch('http://localhost:5001/api/laporan', ...)
             alert(`Laporan berhasil dikirim!`)
             
         } else if (modalType === 'add') {
-            const res = await fetch('http://localhost:5000/api/kegiatan', {
+            // --- TAMBAH KEGIATAN ---
+            const res = await fetch('http://localhost:5001/api/admin/kegiatan', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify(formData)
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify(formData) // formData sudah berisi ID yang digenerate (PY-001)
             })
+
             if (!res.ok) throw new Error('Gagal menambah kegiatan')
             alert('Kegiatan berhasil ditambahkan!')
-        } else if (modalType === 'edit') {
-            alert('Perubahan disimpan!')
         }
         setShowModal(false)
         fetchKegiatan()

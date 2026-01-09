@@ -2,17 +2,20 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Header from '../../../../components/Header'
-import Footer from '../../../../components/Footer'
+import Header from '../../../../components/Header' // Sesuaikan path ini jika perlu
+import Footer from '../../../../components/Footer' // Sesuaikan path ini jika perlu
 import Link from 'next/link'
 
 export default function RegisterPasien() {
   const router = useRouter()
+  
+  // State form
   const [formData, setFormData] = useState({
     username: '',
     password: '',
     full_name: ''
   })
+  
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -26,19 +29,21 @@ export default function RegisterPasien() {
     setError('')
 
     try {
-      // PENTING: Gunakan FormData untuk keseragaman dengan backend Multer
-      const data = new FormData()
-      data.append('username', formData.username)
-      data.append('password', formData.password)
-      data.append('full_name', formData.full_name)
-      data.append('role', 'user') // Hardcode role sebagai 'user' (pasien)
-      // Kita TIDAK meng-append 'img', jadi backend akan menyimpannya sebagai NULL/Default
+      // PERUBAHAN DISINI: Menggunakan JSON biasa, bukan FormData
+      // Karena backend kita mengharapkan JSON (body-parser)
+      const payload = {
+        username: formData.username,
+        password: formData.password,
+        full_name: formData.full_name,
+        role: 'user' // Hardcode role pasien
+      }
 
-      const res = await fetch('http://localhost:5000/api/auth/register', {
+      const res = await fetch('http://localhost:5001/api/auth/register', {
         method: 'POST',
-        // Jangan set 'Content-Type' header secara manual saat pakai FormData!
-        // Browser akan otomatis mengaturnya.
-        body: data 
+        headers: {
+          'Content-Type': 'application/json' // Wajib ada untuk JSON
+        },
+        body: JSON.stringify(payload)
       })
 
       const result = await res.json()
@@ -82,6 +87,7 @@ export default function RegisterPasien() {
                         value={formData.full_name}
                         onChange={handleChange}
                         required 
+                        // Pastikan tidak ada attribute pattern="..." disini
                       />
                     </div>
 
@@ -91,9 +97,11 @@ export default function RegisterPasien() {
                         type="text" 
                         name="username"
                         className="form-control"
+                        placeholder="Username unik"
                         value={formData.username}
                         onChange={handleChange}
                         required 
+                        // Pastikan tidak ada attribute pattern="..." disini
                       />
                     </div>
 
@@ -103,6 +111,7 @@ export default function RegisterPasien() {
                         type="password" 
                         name="password"
                         className="form-control"
+                        placeholder="Password rahasia"
                         value={formData.password}
                         onChange={handleChange}
                         required 
@@ -115,7 +124,12 @@ export default function RegisterPasien() {
                       Foto profil akan menggunakan gambar default sistem.
                     </div>
 
-                    <button type="submit" className="btn btn-success w-100 mt-3" disabled={isLoading}>
+                    <button 
+                      type="submit" 
+                      className="btn btn-success w-100 mt-3" 
+                      disabled={isLoading}
+                      formNoValidate // Tambahan: Mencegah browser validasi pattern aneh-aneh
+                    >
                       {isLoading ? 'Memproses...' : 'Daftar Sekarang'}
                     </button>
                   </form>

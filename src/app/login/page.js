@@ -27,57 +27,51 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('') // Reset error sebelum request
-    setIsLoading(true) // Set status loading
+    setError('')
+    setIsLoading(true)
 
     try {
-      // 1. Tembak API Backend
-      const res = await fetch('http://localhost:5000/api/auth/login', {
+      const res = await fetch('http://localhost:5001/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       })
 
       const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Login gagal')
 
-      if (!res.ok) {
-        throw new Error(data.message || 'Login gagal')
-      }
+      // 🔑 AMBIL DARI data.user (INI PENTING)
+      const { token, user } = data
 
-      // SIMPAN DATA GAMBAR KE LOCALSTORAGE
-      localStorage.setItem('token', data.token) 
+      // SIMPAN SEKALI SAJA
+      localStorage.setItem('token', token)
       localStorage.setItem('user', JSON.stringify({
-        id: data.id,
-        name: data.full_name,
-        role: data.role,
-        img: data.img || '/img/default-avatar.png' // Gunakan gambar default jika user belum punya foto
+        id: user.id,
+        name: user.full_name,
+        role: user.role,
+        img: user.img || '/img/default-avatar.png'
       }))
 
-      // 3. Jika Sukses: Simpan Token & Data User
-      // Kita simpan di localStorage agar bisa dipakai untuk request berikutnya
-      localStorage.setItem('token', data.token) 
-      localStorage.setItem('user', JSON.stringify({
-        id: data.id,
-        name: data.full_name,
-        role: data.role
-      }))
+      // SIMPAN COOKIE UNTUK MIDDLEWARE
+      document.cookie = `user=${encodeURIComponent(JSON.stringify({
+        id: user.id,
+        role: user.role
+      }))}; path=/`;
 
-      // 4. Redirect User berdasarkan Role (Sesuai folder structure kamu)
-      if (data.role === 'dokter') {
-        router.push('/dashboarddokter')
-      } else if (data.role === 'admin' || data.role === 'superadmin') {
-        router.push('/admin/kegiatan')
+
+      // REDIRECT SESUAI ROLE
+      if (user.role === 'dokter') {
+        router.replace('/dashboarddokter')
+      } else if (user.role === 'admin' || user.role === 'superadmin') {
+        router.replace('/admin')
       } else {
-        router.push('/') // Default redirect untuk user biasa
+        router.replace('/')
       }
 
     } catch (err) {
-      // Tampilkan pesan error
       setError(err.message)
     } finally {
-      setIsLoading(false) // Matikan loading selesai request
+      setIsLoading(false)
     }
   }
 
