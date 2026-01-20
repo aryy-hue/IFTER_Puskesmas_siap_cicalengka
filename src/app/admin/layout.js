@@ -4,6 +4,13 @@ import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 
+const MENU = [
+  { label: 'Dashboard', href: '/admin', icon: 'fa-tachometer-alt' },
+  { label: 'Kegiatan', href: '/admin/kegiatan', icon: 'fa-calendar-check' },
+  { label: 'Laporan', href: '/admin/laporan', icon: 'fa-file-alt' },
+  { label: 'Riwayat Pasien', href: '/admin/riwayat-pasien', icon: 'fa-notes-medical' },
+]
+
 export default function AdminLayout({ children }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -11,119 +18,174 @@ export default function AdminLayout({ children }) {
   const [isMounted, setIsMounted] = useState(false)
   const [authorized, setAuthorized] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [user, setUser] = useState(null)
 
-  // =============================
-  // AUTH & ROLE GUARD
-  // =============================
+
   useEffect(() => {
     setIsMounted(true)
 
     const token = localStorage.getItem('token')
-    const user = localStorage.getItem('user')
+    const userData = localStorage.getItem('user')
 
-    if (!token || !user) {
+    if (!token || !userData) {
       router.replace('/login')
       return
     }
 
-    const parsedUser = JSON.parse(user)
+    try {
+      const parsedUser = JSON.parse(userData)
+      if (!['admin', 'superadmin'].includes(parsedUser.role)) {
+        router.replace('/')
+        return
+      }
 
-    if (!['admin', 'superadmin'].includes(parsedUser.role)) {
-      router.replace('/')
-      return
+      setUser(parsedUser)
+      setAuthorized(true)
+    } catch {
+      router.replace('/login')
     }
-
-    setAuthorized(true)
   }, [router])
 
   if (!isMounted || !authorized) return null
 
-  // =============================
-  // MENU ADMIN
-  // =============================
+  const logout = () => {
+    localStorage.clear()
+    router.replace('/login')
+  }
+
   const isActive = (href) => pathname === href
 
   return (
-    <div className="d-flex flex-column min-vh-100">
-
+    <>
       {/* ================= HEADER ================= */}
       <header className="bg-success text-white py-3 shadow sticky-top">
         <div className="container">
           <div className="d-flex justify-content-between align-items-center">
 
+            {/* LOGO */}
             <div className="d-flex align-items-center">
-              <i className="fas fa-heartbeat fa-2x me-2"></i>
+              <div className="me-3">
+                <i className="fas fa-heartbeat fa-2x"></i>
+              </div>
               <div>
-                <h1 className="h5 mb-0 fw-bold">SIAPCicalengka</h1>
+                <h1 className="h5 mb-0 fw-bold">SIAPCICALENGKA</h1>
                 <small>Puskesmas Cicalengka</small>
               </div>
             </div>
 
-            {/* DESKTOP MENU */}
-            <nav className="d-none d-lg-flex gap-3">
-              <Link className={`nav-link text-white ${isActive('/admin') && 'fw-bold'}`} href="/admin">
-                Dashboard
-              </Link>
-              <Link className={`nav-link text-white ${isActive('/admin/kegiatan') && 'fw-bold'}`} href="/admin/kegiatan">
-                Kegiatan
-              </Link>
-              <Link className={`nav-link text-white ${isActive('/admin/laporan') && 'fw-bold'}`} href="/admin/laporan">
-                Laporan
-              </Link>
-              <Link className={`nav-link text-white ${isActive('/admin/riwayat-pasien') && 'fw-bold'}`} href="/admin/riwayat-pasien">
-                Riwayat Pasien
-              </Link>
-              <button
-                className="btn btn-sm btn-light"
-                onClick={() => {
-                  localStorage.clear()
-                  router.replace('/login')
-                }}
-              >
-                Logout
-              </button>
+            {/* DESKTOP NAV */}
+            <nav className="d-none d-lg-block">
+              <ul className="navbar-nav d-flex flex-row align-items-center gap-2">
+                {MENU.map((item) => (
+                  <li className="nav-item" key={item.href}>
+                    <Link
+                      href={item.href}
+                      className={`nav-link ${
+                        isActive(item.href) ? 'fw-bold text-white' : 'text-white'
+                      }`}
+                    >
+                      <i className={`fas ${item.icon} me-1`}></i>
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+
+                {/* PROFILE DROPDOWN */}
+                <li className="nav-item position-relative ms-3">
+                  <button
+                    className="btn btn-light text-success fw-bold rounded-pill"
+                    onClick={() => setProfileOpen(!profileOpen)}
+                  >
+                    <i className="fas fa-user-shield me-1"></i>
+                    {user?.name ?? 'Admin'}
+                  </button>
+
+                  {profileOpen && (
+                    <div
+                      className="dropdown-menu dropdown-menu-end show mt-2"
+                      style={{ position: 'absolute', right: 0 }}
+                    >
+                      <span className="dropdown-item-text text-muted">
+                        Role: {user?.role}
+                      </span>
+
+                      <hr className="dropdown-divider" />
+
+                      <button
+                        className="dropdown-item text-danger"
+                        onClick={logout}
+                      >
+                        <i className="fas fa-sign-out-alt me-2"></i>
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </li>
+              </ul>
             </nav>
 
             {/* MOBILE BUTTON */}
             <button
-              className="btn btn-outline-light d-lg-none"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="btn btn-outline-light border-0 d-lg-none"
+              onClick={() => setMobileMenuOpen(true)}
             >
-              <i className="fas fa-bars"></i>
+              <i className="fas fa-bars fa-lg"></i>
             </button>
+
           </div>
         </div>
       </header>
 
-      {/* ================= MOBILE MENU ================= */}
+      {/* ================= MOBILE OFFCANVAS ================= */}
       {mobileMenuOpen && (
-        <div className="bg-white shadow p-3 d-lg-none">
-          <Link className="d-block mb-2" href="/admin" onClick={() => setMobileMenuOpen(false)}>Dashboard</Link>
-          <Link className="d-block mb-2" href="/admin/kegiatan" onClick={() => setMobileMenuOpen(false)}>Kegiatan</Link>
-          <Link className="d-block mb-2" href="/admin/laporan" onClick={() => setMobileMenuOpen(false)}>Laporan</Link>
-          <Link className="d-block mb-2" href="/admin/riwayat-pasien" onClick={() => setMobileMenuOpen(false)}>Riwayat Pasien</Link>
-          <button
-            className="btn btn-danger w-100 mt-2"
-            onClick={() => {
-              localStorage.clear()
-              router.replace('/login')
-            }}
-          >
-            Logout
-          </button>
+        <div className="offcanvas offcanvas-end show" style={{ visibility: 'visible' }}>
+          <div className="offcanvas-header bg-success text-white">
+            <h5 className="mb-0">{user?.name}</h5>
+            <button
+              className="btn-close btn-close-white"
+              onClick={() => setMobileMenuOpen(false)}
+            ></button>
+          </div>
+
+          <div className="offcanvas-body">
+            <nav className="navbar-nav">
+              {MENU.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`nav-link ${
+                    isActive(item.href) ? 'fw-bold text-success' : ''
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <i className={`fas ${item.icon} me-2`}></i>
+                  {item.label}
+                </Link>
+              ))}
+
+              <hr />
+
+              <button className="nav-link text-danger" onClick={logout}>
+                <i className="fas fa-sign-out-alt me-2"></i>
+                Logout
+              </button>
+            </nav>
+          </div>
         </div>
       )}
 
       {/* ================= MAIN ================= */}
-      <main className="flex-grow-1 bg-light p-4">
-        {children}
+      <main className="bg-light min-vh-100 py-4">
+        <div className="container">
+          {children}
+        </div>
       </main>
 
       {/* ================= FOOTER ================= */}
       <footer className="bg-dark text-white text-center py-3">
         <small>© 2024 SIAPCicalengka</small>
       </footer>
-
-    </div>
+    </>
   )
 }

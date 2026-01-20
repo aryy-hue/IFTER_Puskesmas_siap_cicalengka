@@ -35,7 +35,7 @@ export default function Header() {
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link login-btn" href="/login">
+                  <Link className="nav-link login-btn" href="/login/login-pegawai">
                     <i className="fas fa-user me-1"></i>Login
                   </Link>
                 </li>
