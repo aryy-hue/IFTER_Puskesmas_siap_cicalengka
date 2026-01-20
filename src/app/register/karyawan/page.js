@@ -12,7 +12,7 @@ export default function RegisterPegawaiPage() {
     username: '',
     password: '',
     full_name: '',
-    role: ''
+    role: 'dokter'
   })
 
   const [photo, setPhoto] = useState(null)
@@ -68,8 +68,7 @@ export default function RegisterPegawaiPage() {
         username: '',
         password: '',
         full_name: '',
-        role: '',
-        img: ''
+        role: 'dokter'
       })
       setPhoto(null)
       setPreview(null)
