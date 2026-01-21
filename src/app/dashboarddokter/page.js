@@ -1,262 +1,202 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Header from '../../../components/Header';
-import Footer from '../../../components/Footer';
+import DokterLayout from './DokterLayout';
 import '../globals.css';
 
 export default function DokterPage() {
+  const [userData, setUserData] = useState({ full_name: 'Memuat...' });
+  const [schedules, setSchedules] = useState([]);
+  
+  // State utama untuk tombol dan status teks
   const [statusKehadiran, setStatusKehadiran] = useState({
-    text: 'Belum Mulai',
-    time: 'Status akan berubah setelah Anda menekan tombol "Saya Sudah Sampai"',
-    buttonText: 'Saya Sudah Sampai',
-    buttonClass: 'btn btn-success btn-lg px-4',
-    disabled: false
+    text: 'Memuat...',
+    time: 'Menghubungkan ke server...',
+    buttonText: 'Tunggu',
+    buttonClass: 'btn btn-secondary',
+    disabled: true
   });
 
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
-  const [alertType, setAlertType] = useState('success');
+  const [alert, setAlert] = useState({ show: false, msg: '', type: 'success' });
 
-  // Fungsi untuk mengubah status kehadiran - DARI Component/Dokter.js
-  const ubahStatusKehadiran = () => {
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('id-ID', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-    
-    // Update status menjadi Tersedia
-    setStatusKehadiran({
-      text: 'Tersedia',
-      time: `Sudah sampai di puskesmas sejak ${timeString}`,
-      buttonText: 'Sudah Di Puskesmas',
-      buttonClass: 'btn btn-outline-success btn-lg px-4',
-      disabled: true
-    });
+  // --- LOGIKA REFRESH DATA (DIPANGGIL BERKALA) ---
+  const refreshData = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
 
-    // Simpan status ke localStorage
-    localStorage.setItem('dokterStatus', 'Tersedia');
-    localStorage.setItem('dokterWaktu', timeString);
-
-    // Tampilkan notifikasi sukses
-    showAlertMessage('Status kehadiran berhasil diubah menjadi "Tersedia"', 'success');
-  };
-
-  // Fungsi untuk menampilkan alert - DARI Component/Dokter.js
-  const showAlertMessage = (message, type) => {
-    setAlertMessage(message);
-    setAlertType(type);
-    setShowAlert(true);
-
-    // Auto dismiss setelah 5 detik
-    setTimeout(() => {
-      setShowAlert(false);
-    }, 5000);
-  };
-
-  // Load status dari localStorage saat komponen mount - DARI Component/Dokter.js
-  useEffect(() => {
-    const savedStatus = localStorage.getItem('dokterStatus');
-    const savedTime = localStorage.getItem('dokterWaktu');
-    
-    if (savedStatus === 'Tersedia') {
-      setStatusKehadiran({
-        text: 'Tersedia',
-        time: `Sudah sampai di puskesmas sejak ${savedTime}`,
-        buttonText: 'Sudah Di Puskesmas',
-        buttonClass: 'btn btn-outline-success btn-lg px-4',
-        disabled: true
+    try {
+      // 1. Ambil Profil
+      const resProfile = await fetch('http://localhost:5001/api/auth/profile', {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (resProfile.ok) {
+        const data = await resProfile.json();
+        setUserData({ full_name: data.full_name });
+      }
+
+      // 2. Ambil Jadwal untuk Tabel
+      const resSchedule = await fetch('http://localhost:5001/api/dokter/my-schedule', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (resSchedule.ok) {
+        const data = await resSchedule.json();
+        setSchedules(data);
+      }
+
+      // 3. Ambil Status Kehadiran (Logika Auto-Off ada di Backend)
+      const resStatus = await fetch('http://localhost:5001/api/dokter/current-status', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const statusData = await resStatus.json();
+
+      // LOGIKA PERUBAHAN UI OTOMATIS
+      if (statusData.status === 'Aktif') {
+        setStatusKehadiran({
+          text: 'Tersedia',
+          time: `Anda sedang aktif hingga jam ${statusData.jam_selesai.substring(0, 5)}`,
+          buttonText: 'Sudah Aktif',
+          buttonClass: 'btn btn-outline-success btn-lg px-4',
+          disabled: true
+        });
+      } else if (statusData.status === 'Belum Waktunya') {
+        setStatusKehadiran({
+          text: 'Belum Jam Praktek',
+          time: statusData.message,
+          buttonText: 'Belum Bisa Absen',
+          buttonClass: 'btn btn-secondary btn-lg px-4', // ABU-ABU (Disabled)
+          disabled: true
+        });
+      } else if (statusData.status === 'Selesai' || statusData.status === 'Libur' || statusData.status === 'Tidak Aktif') {
+        setStatusKehadiran({
+          text: 'Praktek Tutup',
+          time: statusData.message || 'Jadwal praktek telah berakhir.',
+          buttonText: 'Praktek Tutup',
+          buttonClass: 'btn btn-secondary btn-lg px-4', // ABU-ABU (Disabled)
+          disabled: true
+        });
+      } else {
+        // HANYA HIJAU JIKA DALAM JAM MASUK & BELUM KLIK
+        setStatusKehadiran({
+          text: 'Siap Melayani',
+          time: 'Silakan klik tombol jika Anda sudah sampai di puskesmas.',
+          buttonText: 'Saya Sudah Sampai',
+          buttonClass: 'btn btn-success btn-lg px-4', // HIJAU (Enabled)
+          disabled: false
+        });
+      }
+    } catch (error) {
+      console.error('Error:', error);
     }
+  };
+
+  // --- AUTO REFRESH SETIAP 10 DETIK ---
+  useEffect(() => {
+    refreshData(); // Jalankan pertama kali saat load
+    
+    // Interval ini akan memastikan tombol berubah warna otomatis saat jam berganti
+    const interval = setInterval(() => {
+      refreshData();
+    }, 10000); // 10 detik sekali cek ke server
+
+    return () => clearInterval(interval); // Bersihkan interval saat pindah halaman
   }, []);
 
+  const handleUpdateStatus = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch('http://localhost:5001/api/dokter/status', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: 'Aktif' })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setAlert({ show: true, msg: 'Status berhasil diaktifkan!', type: 'success' });
+        refreshData();
+      } else {
+        setAlert({ show: true, msg: data.message, type: 'danger' });
+      }
+      setTimeout(() => setAlert(prev => ({ ...prev, show: false })), 5000);
+    } catch (error) {
+      setAlert({ show: true, msg: 'Terjadi kesalahan koneksi.', type: 'danger' });
+    }
+  };
+
   return (
-    <div className="dokter-page">
-      <Header />
-      
-      {/* Alert Notification */}
-      {showAlert && (
-        <div 
-          className={`alert alert-${alertType} alert-dismissible fade show position-fixed`}
-          style={{ top: '100px', right: '20px', zIndex: 1050, minWidth: '300px' }}
-        >
-          <div className="d-flex align-items-center">
-            <i className={`fas fa-${alertType === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2`}></i>
-            <div>{alertMessage}</div>
-          </div>
-          <button 
-            type="button" 
-            className="btn-close" 
-            onClick={() => setShowAlert(false)}
-          ></button>
+    <DokterLayout>
+      {/* Notifikasi Alert */}
+      {alert.show && (
+        <div className={`alert alert-${alert.type} position-fixed`} style={{ top: '100px', right: '20px', zIndex: 1050, minWidth: '300px' }}>
+          <i className={`fas fa-${alert.type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2`}></i>
+          {alert.msg}
         </div>
       )}
 
-      <main className="py-4">
-        <div className="container">
-          {/* Welcome Section */}
-          <div className="row mb-5">
-            <div className="col-12">
-              <div className="card border-0 shadow-sm">
-                <div className="card-body p-4">
-                  <div className="row align-items-center">
-                    <div className="col-md-8">
-                      <h2 className="text-success mb-2">Selamat Datang, Dr. Siti Rahayu!</h2>
-                      <p className="text-muted mb-0">
-                        Spesialis Anak - Selamat bertugas di Puskesmas Cicalengka. 
-                        Mari berikan pelayanan terbaik untuk kesehatan anak.
-                      </p>
-                    </div>
-                    <div className="col-md-4 text-md-end">
-                      <div className="avatar bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center">
-                        <i className="fas fa-user-md"></i>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* Header Welcome */}
+      <div className="card border-0 shadow-sm mb-5 p-4">
+        <h2 className="text-success fw-bold">Selamat Datang, {userData.full_name}!</h2>
+        <p className="text-muted mb-0">Status dashboard Anda akan diperbarui secara otomatis sesuai waktu server.</p>
+      </div>
 
-          {/* Status Kehadiran Section */}
-          <div className="row mb-5">
-            <div className="col-12">
-              <div className="card border-0 shadow-sm">
-                <div className="card-header bg-success text-white py-3">
-                  <h5 className="card-title mb-0">
-                    <i className="fas fa-user-clock me-2"></i>Status Kehadiran Hari Ini
-                  </h5>
-                </div>
-                <div className="card-body p-4">
-                  <div className="row align-items-center">
-                    <div className="col-md-6">
-                      <h4 id="statusText" className={statusKehadiran.text === 'Tersedia' ? 'text-success' : 'text-warning'}>
-                        {statusKehadiran.text}
-                      </h4>
-                      <p id="statusTime" className="text-muted mb-0">{statusKehadiran.time}</p>
-                    </div>
-                    <div className="col-md-6 text-md-end">
-                      <button 
-                        id="btnKehadiran"
-                        className={statusKehadiran.buttonClass}
-                        onClick={ubahStatusKehadiran}
-                        disabled={statusKehadiran.disabled}
-                      >
-                        <i className="fas fa-check-circle me-2"></i>
-                        {statusKehadiran.buttonText}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+      {/* Kartu Status (Tombol) */}
+      <div className="card border-0 shadow-sm mb-5">
+        <div className="card-header bg-success text-white py-3">
+          <h5 className="mb-0 fw-bold"><i className="fas fa-clock me-2"></i>Status Kehadiran Hari Ini</h5>
+        </div>
+        <div className="card-body p-4 d-flex justify-content-between align-items-center">
+          <div>
+            <h3 className={`fw-bold ${statusKehadiran.text === 'Tersedia' ? 'text-success' : 'text-warning'}`}>
+              {statusKehadiran.text}
+            </h3>
+            <p className="text-muted mb-0">{statusKehadiran.time}</p>
           </div>
+          <button 
+            className={statusKehadiran.buttonClass} 
+            onClick={handleUpdateStatus} 
+            disabled={statusKehadiran.disabled}
+          >
+            <i className="fas fa-check-circle me-2"></i>{statusKehadiran.buttonText}
+          </button>
+        </div>
+      </div>
 
-          {/* Jadwal Praktek Section */}
-          <div className="row mb-5">
-            <div className="col-12">
-              <div className="card border-0 shadow-sm">
-                <div className="card-header bg-success text-white py-3">
-                  <h5 className="card-title mb-0">
-                    <i className="fas fa-calendar-alt me-2"></i>Jadwal Praktek Saya
-                  </h5>
-                </div>
-                <div className="card-body p-4">
-                  <div className="table-responsive">
-                    <table className="table table-hover">
-                      <thead>
-                        <tr>
-                          <th>Hari</th>
-                          <th>Waktu</th>
-                          <th>Poli</th>
-                          <th>Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>Senin - Jumat</td>
-                          <td>09:00 - 15:00</td>
-                          <td>Poli Anak</td>
-                          <td><span className="badge bg-success">Aktif</span></td>
-                        </tr>
-                        <tr>
-                          <td>Sabtu</td>
-                          <td>09:00 - 13:00</td>
-                          <td>Poli Anak</td>
-                          <td><span className="badge bg-success">Aktif</span></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Informasi Poli Section */}
-          <div className="row">
-            <div className="col-md-6 mb-4">
-              <div className="card border-0 shadow-sm h-100">
-                <div className="card-header bg-success text-white py-3">
-                  <h5 className="card-title mb-0">
-                    <i className="fas fa-info-circle me-2"></i>Informasi Poli Anak
-                  </h5>
-                </div>
-                <div className="card-body">
-                  <p><strong>Lokasi:</strong> Gedung B, Lantai 1</p>
-                  <p><strong>Kapasitas:</strong> 15 pasien per hari</p>
-                  <p><strong>Fasilitas:</strong></p>
-                  <ul>
-                    <li>2 Ruang Pemeriksaan Anak</li>
-                    <li>Area bermain anak</li>
-                    <li>Alat pemeriksaan tumbuh kembang</li>
-                    <li>Ruangan ber-AC dan colorful</li>
-                  </ul>
-                  <p><strong>Layanan:</strong></p>
-                  <ul>
-                    <li>Pemeriksaan kesehatan anak</li>
-                    <li>Imunisasi</li>
-                    <li>Konsultasi tumbuh kembang</li>
-                    <li>Pemeriksaan bayi baru lahir</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            
-            <div className="col-md-6 mb-4">
-              <div className="card border-0 shadow-sm h-100">
-                <div className="card-header bg-success text-white py-3">
-                  <h5 className="card-title mb-0">
-                    <i className="fas fa-bell me-2"></i>Pengumuman
-                  </h5>
-                </div>
-                <div className="card-body">
-                  <div className="alert alert-info">
-                    <h6><i className="fas fa-exclamation-circle me-2"></i>Rapat Bulanan</h6>
-                    <p className="mb-0">
-                      Akan diadakan rapat bulanan pada Jumat, 15 Desember 2023 pukul 14:00 di Aula Puskesmas.
-                    </p>
-                  </div>
-                  <div className="alert alert-warning">
-                    <h6><i className="fas fa-syringe me-2"></i>Program Imunisasi</h6>
-                    <p className="mb-0">
-                      Minggu depan akan ada program imunisasi campak dan rubella untuk anak usia 9 bulan - 15 tahun.
-                    </p>
-                  </div>
-                  <div className="alert alert-success">
-                    <h6><i className="fas fa-baby me-2"></i>Kelas Ibu Hamil</h6>
-                    <p className="mb-0">
-                      Kelas ibu hamil minggu ini akan membahas tentang perawatan bayi baru lahir dan ASI eksklusif.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+      {/* Tabel Jadwal (Desain Original) */}
+      <div className="card border-0 shadow-sm">
+        <div className="card-header bg-success text-white py-3">
+          <h5 className="mb-0 fw-bold"><i className="fas fa-calendar-alt me-2"></i>Jadwal Praktek Saya</h5>
+        </div>
+        <div className="card-body p-4">
+          <div className="table-responsive">
+            <table className="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Hari</th>
+                  <th>Waktu</th>
+                  <th>Poliklinik</th>
+                  <th>Status Database</th>
+                </tr>
+              </thead>
+              <tbody>
+                {schedules.map((s, i) => (
+                  <tr key={i}>
+                    <td className="fw-bold">{s.hari}</td>
+                    <td>{s.jam_mulai.substring(0, 5)} - {s.jam_selesai.substring(0, 5)}</td>
+                    <td>{s.nama_poli}</td>
+                    <td>
+                      <span className={`badge rounded-pill px-3 py-2 ${s.status === 'Aktif' ? 'bg-success' : 'bg-secondary'}`}>
+                        {s.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-      </main>
-
-      <Footer />
-    </div>
+      </div>
+    </DokterLayout>
   );
 }
