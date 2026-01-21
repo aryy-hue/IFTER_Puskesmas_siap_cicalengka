@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Header from '../../../../components/Header' // Sesuaikan path ini jika perlu
-import Footer from '../../../../components/Footer' // Sesuaikan path ini jika perlu
+import Header from '../../../../components/Header'
+import Footer from '../../../../components/Footer'
 import Link from 'next/link'
 
 export default function RegisterPasien() {
@@ -13,35 +13,100 @@ export default function RegisterPasien() {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
-    full_name: ''
+    full_name: '',
+    role: "user",
+  })
+  
+  const [fieldErrors, setFieldErrors] = useState({
+    full_name: '',
+    username: '',
+    password: ''
   })
   
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+    const { name, value } = e.target
+    setFormData({ ...formData, [name]: value })
+    // Clear error saat user mulai mengetik
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }))
+    }
+  }
+
+  const validateForm = () => {
+    const errors = {}
+    const nameRegex = /^[a-zA-Z\s]{3,50}$/
+    const usernameRegex = /^[a-zA-Z0-9_]{4,20}$/
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/
+
+    if (!nameRegex.test(formData.full_name)) {
+      errors.full_name = 'Nama hanya boleh huruf dan spasi (3-50 karakter)'
+    }
+    
+    if (!usernameRegex.test(formData.username)) {
+      errors.username = 'Username hanya boleh huruf, angka, underscore (4-20 karakter)'
+    }
+    
+    if (!passwordRegex.test(formData.password)) {
+      errors.password = 'Password minimal 8 karakter dengan kombinasi huruf besar, kecil, dan angka'
+    }
+
+    setFieldErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target
+    let error = ''
+    
+    switch(name) {
+      case 'full_name':
+        if (!/^[a-zA-Z\s]{3,50}$/.test(value)) {
+          error = 'Nama hanya boleh huruf dan spasi (3-50 karakter)'
+        }
+        break
+      case 'username':
+        if (!/^[a-zA-Z0-9_]{4,20}$/.test(value)) {
+          error = 'Username hanya boleh huruf, angka, underscore (4-20 karakter)'
+        }
+        break
+      case 'password':
+        if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/.test(value)) {
+          error = 'Password minimal 8 karakter dengan kombinasi huruf besar, kecil, dan angka'
+        }
+        break
+      default:
+        break
+    }
+    
+    setFieldErrors(prev => ({ ...prev, [name]: error }))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+  
+    // Validasi dulu
+    if (!validateForm()) {
+      return
+    }
+    
     setIsLoading(true)
     setError('')
 
     try {
-      // PERUBAHAN DISINI: Menggunakan JSON biasa, bukan FormData
-      // Karena backend kita mengharapkan JSON (body-parser)
       const payload = {
         username: formData.username,
         password: formData.password,
         full_name: formData.full_name,
-        role: 'user' // Hardcode role pasien
+        role: 'user'
       }
 
       const res = await fetch('http://localhost:5001/api/auth/register', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json' // Wajib ada untuk JSON
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload)
       })
@@ -50,7 +115,6 @@ export default function RegisterPasien() {
 
       if (!res.ok) throw new Error(result.message || 'Gagal mendaftar')
 
-      // Redirect ke login setelah sukses
       alert('Registrasi Pasien Berhasil! Silakan Login.')
       router.push('/login')
 
@@ -70,25 +134,40 @@ export default function RegisterPasien() {
             <div className="col-md-6 col-lg-5">
               <div className="card shadow border-0">
                 <div className="card-header bg-success text-white text-center py-3">
-                  <h4 className="mb-0 text-white"><i className="fas fa-user-injured me-2 "></i>Daftar Pasien Baru</h4>
+                  <h4 className="mb-0 text-white"><i className="fas fa-user-injured me-2"></i>Daftar Pasien Baru</h4>
                 </div>
                 <div className="card-body p-4">
                   
-                  {error && <div className="alert alert-danger">{error}</div>}
+                  {error && (
+                    <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                      {error}
+                      <button 
+                        type="button" 
+                        className="btn-close" 
+                        onClick={() => setError('')}
+                        aria-label="Close"
+                      ></button>
+                    </div>
+                  )}
 
-                  <form onSubmit={handleSubmit}>
+                  <form onSubmit={handleSubmit} noValidate>
                     <div className="mb-3">
                       <label className="form-label">Nama Lengkap</label>
                       <input 
                         type="text" 
                         name="full_name"
-                        className="form-control" 
+                        className={`form-control ${fieldErrors.full_name ? 'is-invalid' : ''}`}
                         placeholder="Contoh: Budi Santoso"
                         value={formData.full_name}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         required 
-                        // Pastikan tidak ada attribute pattern="..." disini
                       />
+                      {fieldErrors.full_name && (
+                        <div className="invalid-feedback">
+                          {fieldErrors.full_name}
+                        </div>
+                      )}
                     </div>
 
                     <div className="mb-3">
@@ -96,13 +175,18 @@ export default function RegisterPasien() {
                       <input 
                         type="text" 
                         name="username"
-                        className="form-control"
+                        className={`form-control ${fieldErrors.username ? 'is-invalid' : ''}`}
                         placeholder="Username unik"
                         value={formData.username}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         required 
-                        // Pastikan tidak ada attribute pattern="..." disini
                       />
+                      {fieldErrors.username && (
+                        <div className="invalid-feedback">
+                          {fieldErrors.username}
+                        </div>
+                      )}
                     </div>
 
                     <div className="mb-3">
@@ -110,15 +194,23 @@ export default function RegisterPasien() {
                       <input 
                         type="password" 
                         name="password"
-                        className="form-control"
+                        className={`form-control ${fieldErrors.password ? 'is-invalid' : ''}`}
                         placeholder="Password rahasia"
                         value={formData.password}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         required 
                       />
+                      {fieldErrors.password && (
+                        <div className="invalid-feedback">
+                          {fieldErrors.password}
+                        </div>
+                      )}
+                      <small className="text-muted">
+                        Password minimal 8 karakter dengan kombinasi huruf besar, kecil, dan angka
+                      </small>
                     </div>
                     
-                    {/* Info Default Image */}
                     <div className="alert alert-info py-2 small">
                       <i className="fas fa-info-circle me-1"></i>
                       Foto profil akan menggunakan gambar default sistem.
@@ -128,14 +220,23 @@ export default function RegisterPasien() {
                       type="submit" 
                       className="btn btn-success w-100 mt-3" 
                       disabled={isLoading}
-                      formNoValidate // Tambahan: Mencegah browser validasi pattern aneh-aneh
                     >
-                      {isLoading ? 'Memproses...' : 'Daftar Sekarang'}
+                      {isLoading ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          Memproses...
+                        </>
+                      ) : 'Daftar Sekarang'}
                     </button>
                   </form>
                   
                   <div className="text-center mt-3">
-                    <small>Sudah punya akun? <Link href="/login" className="text-success fw-bold">Login disini</Link></small>
+                    <small>
+                      Sudah punya akun?{' '}
+                      <Link href="/login" className="text-success fw-bold text-decoration-none">
+                        Login disini
+                      </Link>
+                    </small>
                   </div>
                 </div>
               </div>
