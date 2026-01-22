@@ -24,11 +24,11 @@ export default function AdminDashboard() {
 
   const quickActions = [
     {
-      title: 'Approval Dokter',
-      description: 'Verifikasi akun dokter baru',
-      icon: 'fas fa-user-check',
-      href: '/admin/approval-dokter', // Link ke halaman approval
-      color: 'danger' // Warna merah agar mencolok
+      title: 'Kelola Dokter',
+      description: 'Kelola data dan jadwal dokter',
+      icon: 'fas fa-user-md',
+      href: '/admin/kelola-dokter',
+      color: 'primary'
     },
     {
       title: 'Tambah Kegiatan',
@@ -148,7 +148,7 @@ export default function AdminDashboard() {
         <div className="col-12">
           <div className="card border-0 shadow-sm">
             <div className="card-header bg-white border-0 py-3">
-              <h5 className="card-title mb-0 text-success">
+              <h5 className="card-title mb-0 text-white">
                 <i className="fas fa-bolt me-2"></i>Quick Actions
               </h5>
               <p className="text-muted mb-0">Akses cepat ke fitur admin</p>
@@ -171,44 +171,6 @@ export default function AdminDashboard() {
                     </Link>
                   </div>
                 ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="row">
-        <div className="col-12">
-          <div className="card border-0 shadow-sm">
-            <div className="card-header bg-white border-0 py-3">
-              <h5 className="card-title mb-0 text-success">
-                <i className="fas fa-clock me-2"></i>Aktivitas Terbaru
-              </h5>
-            </div>
-            <div className="card-body">
-              <div className="list-group list-group-flush">
-                <div className="list-group-item d-flex justify-content-between align-items-center border-0">
-                  <div>
-                    <i className="fas fa-calendar-check text-success me-2"></i>
-                    <span>Kegiatan baru "Posyandu Lansia" ditambahkan</span>
-                  </div>
-                  <small className="text-muted">2 jam yang lalu</small>
-                </div>
-                <div className="list-group-item d-flex justify-content-between align-items-center border-0">
-                  <div>
-                    <i className="fas fa-file-pdf text-danger me-2"></i>
-                    <span>Laporan bulan Januari 2024 dicetak</span>
-                  </div>
-                  <small className="text-muted">1 hari yang lalu</small>
-                </div>
-                <div className="list-group-item d-flex justify-content-between align-items-center border-0">
-                  <div>
-                    <i className="fas fa-user-check text-info me-2"></i>
-                    <span>Data pasien Ahmad Santoso diperbarui</span>
-                  </div>
-                  <small className="text-muted">2 hari yang lalu</small>
-                </div>
               </div>
             </div>
           </div>

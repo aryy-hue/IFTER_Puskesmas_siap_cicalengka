@@ -1,256 +1,323 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import jsPDF from 'jspdf'
 
 export default function LaporanPage() {
   const [laporan, setLaporan] = useState([])
+  const [kegiatanList, setKegiatanList] = useState([])
+  const [selectedKegiatan, setSelectedKegiatan] = useState(null)
+
+  const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [isEdit, setIsEdit] = useState(false)
   const [editId, setEditId] = useState(null)
 
   const [formData, setFormData] = useState({
-    judul: '',
-    periode: '',
-    detail: '',
-    catatan: '',
-    images: [],
-    pdfFile: null
+    kegiatan_id: '',
+    judul_laporan: '',
+    detail_kegiatan: '',
+    img: null
   })
 
-  // dummy awal
+  // ================= FETCH DATA =================
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem('token')
+
+      const [lapRes, kegRes] = await Promise.all([
+        fetch('http://localhost:5001/api/admin/laporan', {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch('http://localhost:5001/api/admin/kegiatan', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ])
+
+      const lapData = await lapRes.json()
+      const kegData = await kegRes.json()
+
+      setLaporan(Array.isArray(lapData) ? lapData : [])
+      setKegiatanList(Array.isArray(kegData) ? kegData : [])
+    } catch (err) {
+      alert('Gagal mengambil data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
-    setLaporan([
-      {
-        id: 1,
-        judul: 'Kegiatan Posyandu Balita',
-        periode: 'Januari 2024',
-        detail: 'Penimbangan, imunisasi, dan pemberian vitamin A.',
-        catatan: 'Antusias warga tinggi.',
-        images: ['/img/puskesmas.jpg'],
-        pdfFile: null,
-        createdAt: new Date().toISOString(),
-        status: 'Draft'
-      }
-    ])
+    fetchData()
   }, [])
 
-  const resetForm = () => {
-    setFormData({
-      judul: '',
-      periode: '',
-      detail: '',
-      catatan: '',
-      images: [],
-      pdfFile: null
+  // ================= FILTER KEGIATAN =================
+  const kegiatanTanpaLaporan = isEdit
+    ? kegiatanList
+    : kegiatanList.filter(
+        k => !laporan.some(l => l.kegiatan.id === k.id)
+      )
+
+  // ================= OPEN EDIT =================
+  const openEdit = (item) => {
+    setIsEdit(true)
+    setEditId(item.laporan_id)
+    setShowModal(true)
+
+    setSelectedKegiatan({
+      id: item.kegiatan.id,
+      judul: item.kegiatan.judul,
+      tanggal: item.kegiatan.tanggal,
+      jam_mulai: item.kegiatan.jam_mulai,
+      jam_selesai: item.kegiatan.jam_selesai
     })
+
+    setFormData({
+      kegiatan_id: item.kegiatan.id,
+      judul_laporan: item.judul_laporan,
+      detail_kegiatan: item.detail_kegiatan,
+      img: null
+    })
+  }
+
+  // ================= SUBMIT =================
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    const token = localStorage.getItem('token')
+
+    const fd = new FormData()
+    fd.append('kegiatan_id', formData.kegiatan_id)
+    fd.append('judul_laporan', formData.judul_laporan)
+    fd.append('detail_kegiatan', formData.detail_kegiatan)
+    if (formData.img) fd.append('img', formData.img)
+
+    const url = isEdit
+      ? `http://localhost:5001/api/admin/laporan/${editId}`
+      : 'http://localhost:5001/api/admin/laporan'
+
+    const method = isEdit ? 'PUT' : 'POST'
+
+    const res = await fetch(url, {
+      method,
+      headers: { Authorization: `Bearer ${token}` },
+      body: fd
+    })
+
+    if (!res.ok) {
+      alert('Gagal menyimpan laporan')
+      return
+    }
+
+    setShowModal(false)
     setIsEdit(false)
     setEditId(null)
+    setSelectedKegiatan(null)
+
+    setFormData({
+      kegiatan_id: '',
+      judul_laporan: '',
+      detail_kegiatan: '',
+      img: null
+    })
+
+    fetchData()
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  // ================= DELETE =================
+  const handleDelete = async (id) => {
+    if (!confirm('Hapus laporan ini?')) return
+    const token = localStorage.getItem('token')
 
-    if (isEdit) {
-      setLaporan(
-        laporan.map((l) =>
-          l.id === editId ? { ...l, ...formData } : l
-        )
-      )
-    } else {
-      setLaporan([
-        ...laporan,
-        {
-          id: Date.now(),
-          ...formData,
-          createdAt: new Date().toISOString(),
-          status: 'Draft'
-        }
-      ])
-    }
+    await fetch(`http://localhost:5001/api/admin/laporan/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    })
 
-    resetForm()
-    setShowModal(false)
+    fetchData()
   }
 
-  const handleEdit = (item) => {
-    setFormData(item)
-    setEditId(item.id)
-    setIsEdit(true)
-    setShowModal(true)
-  }
-
-  // === PDF DENGAN GAMBAR ===
-const handlePDF = async (item) => {
+  // ================= PDF =================
+// ================= PDF =================
+const handlePDF = (item) => {
   const doc = new jsPDF()
-
-  // ===== HEADER =====
+  const pageWidth = doc.internal.pageSize.getWidth()
+  
+  // Tambahkan header/kop surat (gambar)
+  // Anda perlu mengonversi gambar ke base64 atau URL
+  // Contoh: doc.addImage(headerImageData, 'PNG', 10, 10, 190, 40)
+  
+  // Atau jika Anda ingin membuat kop surat manual:
   doc.setFontSize(14)
-  doc.text('PUSKESMAS CICALENGKA', 105, 15, { align: 'center' })
-
+  doc.setFont("helvetica", "bold")
+  doc.text('PEMERINTAH KABUPATEN BANDUNG', pageWidth / 2, 15, { align: 'center' })
+  doc.text('DINAS KESEHATAN', pageWidth / 2, 23, { align: 'center' })
+  doc.setFontSize(16)
+  doc.text('PUSKESMAS CICALENGKA DTP', pageWidth / 2, 31, { align: 'center' })
+  
   doc.setFontSize(10)
-  doc.text(
-    'Jl. Raya Cicalengka No. 123, Kabupaten Bandung',
-    105,
-    21,
-    { align: 'center' }
-  )
-
-  doc.line(20, 25, 190, 25)
-
-  // ===== JUDUL =====
-  doc.setFontSize(13)
-  doc.text('LAPORAN KEGIATAN', 105, 35, { align: 'center' })
-
+  doc.setFont("helvetica", "normal")
+  doc.text('Jln. Raya Cicalengka No.321 Telp. (022) 7949217 Kode Pos 40395', pageWidth / 2, 39, { align: 'center' })
+  doc.text('E-mail : puskicalengka_bandungkab@yahoo.co.id', pageWidth / 2, 45, { align: 'center' })
+  
+  // Garis pemisah
+  doc.setLineWidth(0.5)
+  doc.line(10, 50, pageWidth - 10, 50)
+  doc.line(10, 51, pageWidth - 10, 51)
+  
+  // Judul utama
+  doc.setFontSize(14)
+  doc.setFont("helvetica", "bold")
+  doc.text('LAPORAN KEGIATAN PUSKESMAS', pageWidth / 2, 65, { align: 'center' })
+  
+  // Spasi
   doc.setFontSize(11)
-  doc.text(item.judul.toUpperCase(), 105, 42, { align: 'center' })
-
-  // ===== INFORMASI =====
-  doc.setFontSize(11)
-  doc.text(`Periode`, 20, 55)
-  doc.text(`: ${item.periode}`, 60, 55)
-
-  doc.text(`Tanggal`, 20, 63)
-  doc.text(
-    `: ${new Date(item.createdAt).toLocaleDateString('id-ID')}`,
-    60,
-    63
-  )
-
-  // ===== ISI LAPORAN =====
-  let y = 78
-
-  doc.text('1. Latar Belakang', 20, y)
-  y += 8
-  doc.text(
-    item.detail,
-    25,
-    y,
-    { maxWidth: 160 }
-  )
-
-  y += 30
-  doc.text('2. Tujuan Kegiatan', 20, y)
-  y += 8
-  doc.text(
-    'Meningkatkan pelayanan kesehatan kepada masyarakat.',
-    25,
-    y,
-    { maxWidth: 160 }
-  )
-
-  y += 20
-  doc.text('3. Waktu dan Tempat', 20, y)
-  y += 8
-  doc.text(
-    `Kegiatan dilaksanakan pada periode ${item.periode} di wilayah kerja Puskesmas Cicalengka.`,
-    25,
-    y,
-    { maxWidth: 160 }
-  )
-
-  y += 25
-  doc.text('4. Uraian Kegiatan', 20, y)
-  y += 8
-  doc.text(
-    item.detail,
-    25,
-    y,
-    { maxWidth: 160 }
-  )
-
-  // ===== DOKUMENTASI =====
-  y += 35
-  doc.text('5. Dokumentasi Kegiatan', 20, y)
-  y += 5
-
-  if (item.images && item.images.length > 0) {
-    for (let i = 0; i < item.images.length; i++) {
-      const img = new Image()
-      img.src = item.images[i]
-
-      await new Promise((resolve) => {
-        img.onload = () => {
-          doc.addImage(img, 'JPEG', 25, y + 5, 60, 45)
-          resolve()
-        }
-      })
-
-      y += 55
-
-      if (y > 240) {
-        doc.addPage()
-        y = 30
-      }
-    }
-  } else {
-    doc.text('-', 25, y + 10)
-    y += 20
+  doc.setFont("helvetica", "normal")
+  
+  // Data laporan dengan format rapi
+  let yPosition = 80
+  
+  // Judul Laporan
+  doc.setFont("helvetica", "bold")
+  doc.text('Judul Laporan:', 15, yPosition)
+  doc.setFont("helvetica", "normal")
+  doc.text(`: ${item.judul_laporan}`, 50, yPosition)
+  yPosition += 8
+  
+  // Tanggal Laporan
+  doc.setFont("helvetica", "bold")
+  doc.text('Tanggal Laporan:', 15, yPosition)
+  doc.setFont("helvetica", "normal")
+  doc.text(`: ${new Date(item.tanggal_laporan).toLocaleDateString('id-ID', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })}`, 50, yPosition)
+  yPosition += 8
+  
+  // Kegiatan
+  doc.setFont("helvetica", "bold")
+  doc.text('Kegiatan:', 15, yPosition)
+  doc.setFont("helvetica", "normal")
+  doc.text(`: ${item.kegiatan.judul}`, 50, yPosition)
+  yPosition += 8
+  
+  // Tanggal Kegiatan
+  doc.setFont("helvetica", "bold")
+  doc.text('Tanggal Kegiatan:', 15, yPosition)
+  doc.setFont("helvetica", "normal")
+  doc.text(`: ${new Date(item.kegiatan.tanggal).toLocaleDateString('id-ID')}`, 50, yPosition)
+  yPosition += 8
+  
+  // Waktu Kegiatan
+  doc.setFont("helvetica", "bold")
+  doc.text('Waktu Kegiatan:', 15, yPosition)
+  doc.setFont("helvetica", "normal")
+  doc.text(`: ${item.kegiatan.jam_mulai} - ${item.kegiatan.jam_selesai}`, 50, yPosition)
+  yPosition += 8
+  
+  // Lokasi Kegiatan
+  doc.setFont("helvetica", "bold")
+  doc.text('Lokasi Kegiatan:', 15, yPosition)
+  doc.setFont("helvetica", "normal")
+  doc.text(`: ${item.kegiatan.lokasi}`, 50, yPosition)
+  yPosition += 12
+  
+  // Detail Kegiatan dengan judul terpisah
+  doc.setFont("helvetica", "bold")
+  doc.text('DETAIL KEGIATAN', pageWidth / 2, yPosition, { align: 'center' })
+  yPosition += 8
+  
+  // Garis bawah judul detail
+  doc.setLineWidth(0.3)
+  doc.line(pageWidth / 2 - 40, yPosition, pageWidth / 2 + 40, yPosition)
+  yPosition += 10
+  
+  // Isi detail kegiatan dengan alignment justify
+  const splitDetail = doc.splitTextToSize(item.detail_kegiatan, pageWidth - 30)
+  doc.text(splitDetail, 15, yPosition, { align: 'left' })
+  
+  // Tanda tangan (jika diperlukan)
+  const pageHeight = doc.internal.pageSize.getHeight()
+  const signatureY = pageHeight - 50
+  
+  doc.setLineWidth(0.5)
+  doc.line(pageWidth - 60, signatureY + 20, pageWidth - 15, signatureY + 20)
+  
+  doc.text('Mengetahui,', pageWidth - 37, signatureY, { align: 'center' })
+  doc.text('Drg. Wulandari M.H', pageWidth - 37, signatureY + 25, { align: 'center' })
+  doc.text('Kepala Puskesmas Cicalengka DTP', pageWidth - 37, signatureY + 30, { align: 'center' })
+  
+  doc.text('', 15, signatureY) // Spasi
+  doc.text('', 15, signatureY + 25)
+  doc.text('', 15, signatureY + 30)
+  
+  // Nomor halaman
+  const totalPages = doc.internal.getNumberOfPages()
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i)
+    doc.setFontSize(10)
+    doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - 20, pageHeight - 10, { align: 'right' })
   }
-
-  // ===== PENUTUP =====
-  if (y > 200) doc.addPage()
-
-  doc.text('Demikian laporan kegiatan ini dibuat sebagai bahan dokumentasi.', 20, y + 20)
-
-  doc.text('Cicalengka, ' + new Date().toLocaleDateString('id-ID'), 130, y + 40)
-  doc.text('Mengetahui,', 130, y + 50)
-  doc.text('Kepala Puskesmas', 130, y + 70)
-
-  doc.save(`Laporan-Kegiatan-${item.judul}.pdf`)
+  
+  doc.save(`Laporan-${item.judul_laporan}.pdf`)
 }
 
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <div className="spinner-border text-success"></div>
+      </div>
+    )
+  }
 
   return (
-    <div>
-      <div className="d-flex justify-content-between mb-4">
-        <h1 className="h3">Kelola Laporan</h1>
-        <button
-          className="btn btn-success"
-          onClick={() => {
-            resetForm()
-            setShowModal(true)
-          }}
-        >
-          + Buat Laporan
+    <div className="container-fluid p-3">
+      <div className="d-flex justify-content-between mb-3">
+        <h4>Kelola Laporan</h4>
+        <button className="btn btn-success" onClick={() => setShowModal(true)}>
+          + Tambah Laporan
         </button>
       </div>
 
+      {/* TABLE */}
       <div className="card">
         <div className="card-body table-responsive">
-          <table className="table table-striped">
-            <thead>
+          <table className="table table-bordered">
+            <thead className="table-success">
               <tr>
                 <th>Judul</th>
-                <th>Periode</th>
-                <th>Status</th>
                 <th>Tanggal</th>
-                <th>Aksi</th>
+                <th>Lokasi</th>
+                <th className="text-center">Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {laporan.map((l) => (
-                <tr key={l.id}>
-                  <td>{l.judul}</td>
-                  <td>{l.periode}</td>
-                  <td>
-                    <span className="badge bg-warning">{l.status}</span>
-                  </td>
-                  <td>
-                    {new Date(l.createdAt).toLocaleDateString('id-ID')}
-                  </td>
-                  <td>
+              {laporan.map(l => (
+                <tr key={l.laporan_id}>
+                  <td>{l.judul_laporan}</td>
+                  <td>{new Date(l.tanggal_laporan).toLocaleDateString('id-ID')}</td>
+                  <td>{l.kegiatan.lokasi}</td>
+                  <td className="text-center">
                     <button
                       className="btn btn-sm btn-outline-primary me-1"
+                      title="PDF"
                       onClick={() => handlePDF(l)}
                     >
-                      PDF
+                      <i className="fas fa-file-pdf"></i>
                     </button>
                     <button
-                      className="btn btn-sm btn-outline-secondary"
-                      onClick={() => handleEdit(l)}
+                      className="btn btn-sm btn-outline-warning me-1"
+                      title="Edit"
+                      onClick={() => openEdit(l)}
                     >
-                      Edit
+                      <i className="fas fa-edit"></i>
+                    </button>
+                    <button
+                      className="btn btn-sm btn-outline-danger"
+                      title="Hapus"
+                      onClick={() => handleDelete(l.laporan_id)}
+                    >
+                      <i className="fas fa-trash"></i>
                     </button>
                   </td>
                 </tr>
@@ -262,75 +329,84 @@ const handlePDF = async (item) => {
 
       {/* MODAL */}
       {showModal && (
-        <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div className="modal show d-block bg-dark bg-opacity-50">
           <div className="modal-dialog modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5>{isEdit ? 'Edit Laporan' : 'Buat Laporan'}</h5>
-                <button className="btn-close" onClick={() => setShowModal(false)}></button>
+            <form className="modal-content" onSubmit={handleSubmit}>
+              <div className="modal-header bg-success text-white">
+                <h5>{isEdit ? 'Edit Laporan' : 'Tambah Laporan'}</h5>
               </div>
 
-              <form onSubmit={handleSubmit}>
-                <div className="modal-body">
-                  <input
-                    className="form-control mb-2"
-                    placeholder="Judul laporan"
-                    value={formData.judul}
-                    onChange={(e) => setFormData({ ...formData, judul: e.target.value })}
-                    required
-                  />
+              <div className="modal-body">
+                <select
+                  className="form-select mb-3"
+                  value={formData.kegiatan_id}
+                  onChange={e => {
+                    const k = kegiatanList.find(x => x.id === e.target.value)
+                    setSelectedKegiatan(k)
+                    setFormData({ ...formData, kegiatan_id: e.target.value })
+                  }}
+                  required
+                >
+                  <option value="">-- Pilih Kegiatan --</option>
+                  {kegiatanTanpaLaporan.map(k => (
+                    <option key={k.id} value={k.id}>
+                      {k.id} - {k.judul}
+                    </option>
+                  ))}
+                </select>
 
-                  <input
-                    className="form-control mb-2"
-                    placeholder="Periode"
-                    value={formData.periode}
-                    onChange={(e) => setFormData({ ...formData, periode: e.target.value })}
-                    required
-                  />
+                {selectedKegiatan && (
+                  <div className="alert alert-light border">
+                    <p><strong>Nama:</strong> {selectedKegiatan.judul}</p>
+                    <p><strong>Tanggal:</strong> {selectedKegiatan.tanggal}</p>
+                    <p>
+                      <strong>Waktu:</strong>{' '}
+                      {selectedKegiatan.jam_mulai} - {selectedKegiatan.jam_selesai}
+                    </p>
+                  </div>
+                )}
 
-                  <textarea
-                    className="form-control mb-2"
-                    rows="4"
-                    placeholder="Detail kegiatan"
-                    value={formData.detail}
-                    onChange={(e) => setFormData({ ...formData, detail: e.target.value })}
-                    required
-                  ></textarea>
+                <input
+                  className="form-control mb-2"
+                  placeholder="Judul Laporan"
+                  value={formData.judul_laporan}
+                  onChange={e =>
+                    setFormData({ ...formData, judul_laporan: e.target.value })
+                  }
+                  required
+                />
 
-                  <textarea
-                    className="form-control mb-3"
-                    rows="3"
-                    placeholder="Catatan"
-                    value={formData.catatan}
-                    onChange={(e) => setFormData({ ...formData, catatan: e.target.value })}
-                  ></textarea>
+                <textarea
+                  className="form-control mb-2"
+                  placeholder="Detail Kegiatan"
+                  value={formData.detail_kegiatan}
+                  onChange={e =>
+                    setFormData({ ...formData, detail_kegiatan: e.target.value })
+                  }
+                  required
+                />
 
-                  <label className="form-label">Upload Gambar (opsional)</label>
-                  <input
-                    type="file"
-                    className="form-control mb-3"
-                    multiple
-                    accept="image/*"
-                  />
+                <input
+                  type="file"
+                  className="form-control"
+                  accept="image/*"
+                  onChange={e =>
+                    setFormData({ ...formData, img: e.target.files[0] })
+                  }
+                />
+              </div>
 
-                  <label className="form-label">Upload File PDF (opsional)</label>
-                  <input
-                    type="file"
-                    className="form-control"
-                    accept="application/pdf"
-                  />
-                </div>
-
-                <div className="modal-footer">
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                    Batal
-                  </button>
-                  <button className="btn btn-success">
-                    {isEdit ? 'Simpan Perubahan' : 'Simpan'}
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowModal(false)}
+                >
+                  Batal
+                </button>
+                <button className="btn btn-success">Simpan</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

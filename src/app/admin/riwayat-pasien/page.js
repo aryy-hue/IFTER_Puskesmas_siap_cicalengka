@@ -1,184 +1,339 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function RiwayatPasien() {
-  const [pasien, setPasien] = useState([])
+  const [data, setData] = useState([])
+  const [lokasiList, setLokasiList] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedPasien, setSelectedPasien] = useState(null)
+  const [selectedItem, setSelectedItem] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  // Data sample pasien
+  const [showModal, setShowModal] = useState(false)
+  const [isEdit, setIsEdit] = useState(false)
+
+  const [formData, setFormData] = useState({
+    pasien_nama: '',
+    penyakit: '',
+    lokasi_id: '',
+    alamat: '',
+    tanggal: ''
+  })
+
+  // ================= FETCH =================
   useEffect(() => {
-    const sampleData = [
-      {
-        id: 1,
-        nama: 'Ahmad Santoso',
-        nik: '3204101234567890',
-        alamat: 'Jl. Merdeka No. 123, Cicalengka',
-        tanggalLahir: '1985-05-15',
-        riwayat: [
-          {
-            tanggal: '2024-01-15',
-            poli: 'Poli Umum',
-            diagnosa: 'Demam dan Flu',
-            obat: 'Paracetamol, Vitamin C'
-          },
-          {
-            tanggal: '2024-01-10',
-            poli: 'Poli Gigi',
-            diagnosa: 'Kontrol rutin',
-            obat: '-'
-          }
-        ]
-      },
-      {
-        id: 2,
-        nama: 'Siti Rahayu',
-        nik: '3204101234567891',
-        alamat: 'Jl. Pahlawan No. 45, Cicalengka',
-        tanggalLahir: '1990-08-20',
-        riwayat: [
-          {
-            tanggal: '2024-01-12',
-            poli: 'Poli Anak',
-            diagnosa: 'Imunisasi DPT',
-            obat: 'Vaksin DPT'
-          }
-        ]
-      }
-    ]
-    setPasien(sampleData)
+    fetchData()
+    fetchLokasi()
   }, [])
 
-  const filteredPasien = pasien.filter(p => 
-    p.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.nik.includes(searchTerm)
+  const fetchData = async () => {
+  try {
+    const token = localStorage.getItem('token')
+
+    if (!token) {
+      alert('Token tidak ditemukan, silakan login ulang')
+      return
+    }
+
+    const res = await fetch(
+      'http://localhost:5001/api/admin/riwayat-pasien',
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    )
+
+    const result = await res.json()
+    setData(Array.isArray(result) ? result : [])
+  } catch (err) {
+    console.error(err)
+    alert('Gagal mengambil data pasien')
+  } finally {
+    setLoading(false)
+  }
+}
+
+
+  const fetchLokasi = async () => {
+    const res = await fetch('http://localhost:5001/api/lokasi')
+    const result = await res.json()
+    setLokasiList(Array.isArray(result) ? result : [])
+  }
+
+  // ================= FILTER =================
+  const filteredData = data.filter(item =>
+    item.pasien_nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.penyakit.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.alamat.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  return (
-    <div>
-      <h1 className="h3 mb-4">Riwayat Pasien</h1>
+  // ================= MODAL =================
+  const openAdd = () => {
+    setIsEdit(false)
+    setSelectedItem(null)
+    setFormData({
+      pasien_nama: '',
+      penyakit: '',
+      lokasi_id: '',
+      alamat: '',
+      tanggal: ''
+    })
+    setShowModal(true)
+  }
 
-      {/* Search Bar */}
-      <div className="card mb-4">
-        <div className="card-body">
-          <div className="row">
-            <div className="col-md-6">
-              <div className="input-group">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Cari berdasarkan nama atau NIK..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <button className="btn btn-outline-primary">
-                  <i className="fas fa-search"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+  const openEdit = (item) => {
+    setIsEdit(true)
+    setSelectedItem(item)
+    setFormData({
+      pasien_nama: item.pasien_nama,
+      penyakit: item.penyakit,
+      lokasi_id: item.lokasi_id,
+      alamat: item.alamat,
+      tanggal: item.tanggal?.slice(0, 10)
+    })
+    setShowModal(true)
+  }
+
+  // ================= SUBMIT =================
+  const handleSubmit = async (e) => {
+  e.preventDefault()
+  const token = localStorage.getItem('token')
+
+  if (!token) {
+    alert('Token tidak ditemukan, silakan login ulang')
+    return
+  }
+
+  const endpoint = isEdit
+    ? `http://localhost:5001/api/admin/riwayat-pasien/${formData.id}`
+    : 'http://localhost:5001/api/admin/riwayat-pasien'
+
+  const method = isEdit ? 'PUT' : 'POST'
+
+  try {
+    const res = await fetch(endpoint, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        pasien_nama: formData.pasien_nama,
+        penyakit: formData.penyakit,
+        lokasi_id: formData.lokasi_id,
+        alamat: formData.alamat,
+        tanggal: formData.tanggal
+      })
+    })
+
+    const result = await res.json()
+
+    if (!res.ok) {
+      alert(result.message || 'Gagal menyimpan data')
+      return
+    }
+
+    setShowModal(false)
+    fetchData()
+  } catch (err) {
+    console.error(err)
+    alert('Terjadi kesalahan koneksi')
+  }
+}
+
+
+  // ================= DELETE =================
+  const handleDelete = async (id) => {
+    if (!confirm('Yakin ingin menghapus data ini?')) return
+    const token = localStorage.getItem('token')
+
+    await fetch(
+      `http://localhost:5001/api/admin/riwayat-pasien/${id}`,
+      {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    )
+
+    setSelectedItem(null)
+    fetchData()
+  }
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <div className="spinner-border text-success"></div>
+      </div>
+    )
+  }
+
+  // ================= RENDER =================
+  return (
+    <div className="container-fluid p-3">
+      <div className="d-flex justify-content-between mb-3">
+        <h4>Riwayat Penyakit Berat</h4>
+        <button className="btn btn-success" onClick={openAdd}>
+          <i className="fas fa-plus me-2"></i>Tambah Data
+        </button>
       </div>
 
+      <input
+        className="form-control mb-3"
+        placeholder="Cari nama, penyakit, atau alamat..."
+        value={searchTerm}
+        onChange={e => setSearchTerm(e.target.value)}
+      />
+
       <div className="row">
-        {/* Daftar Pasien */}
-        <div className="col-md-4">
+        {/* LIST */}
+        <div className="col-md-4 mb-3">
           <div className="card">
-            <div className="card-header">
-              <h5 className="card-title mb-0">Daftar Pasien</h5>
+            <div className="card-header bg-success text-white">
+              Daftar Pasien
             </div>
-            <div className="card-body p-0">
-              {filteredPasien.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-muted">Tidak ada pasien ditemukan</p>
-                </div>
-              ) : (
-                <div className="list-group list-group-flush">
-                  {filteredPasien.map((p) => (
-                    <button
-                      key={p.id}
-                      className={`list-group-item list-group-item-action ${
-                        selectedPasien?.id === p.id ? 'active' : ''
-                      }`}
-                      onClick={() => setSelectedPasien(p)}
-                    >
-                      <div>
-                        <strong>{p.nama}</strong>
-                        <br />
-                        <small>NIK: {p.nik}</small>
-                        <br />
-                        <small>{p.alamat}</small>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+            <div className="list-group list-group-flush">
+              {filteredData.map(item => (
+                <button
+                  key={item.id}
+                  className={`list-group-item list-group-item-action ${
+                    selectedItem?.id === item.id ? 'active' : ''
+                  }`}
+                  onClick={() => setSelectedItem(item)}
+                >
+                  <strong>{item.pasien_nama}</strong>
+                  <br />
+                  <small>Penyakit: {item.penyakit}</small>
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Detail Riwayat */}
+        {/* DETAIL */}
         <div className="col-md-8">
-          {selectedPasien ? (
+          {selectedItem ? (
             <div className="card">
-              <div className="card-header">
-                <h5 className="card-title mb-0">
-                  Riwayat Medis - {selectedPasien.nama}
-                </h5>
-              </div>
-              <div className="card-body">
-                <div className="row mb-4">
-                  <div className="col-md-6">
-                    <strong>NIK:</strong> {selectedPasien.nik}
-                  </div>
-                  <div className="col-md-6">
-                    <strong>Tanggal Lahir:</strong> {new Date(selectedPasien.tanggalLahir).toLocaleDateString('id-ID')}
-                  </div>
-                  <div className="col-12 mt-2">
-                    <strong>Alamat:</strong> {selectedPasien.alamat}
-                  </div>
+              <div className="card-header d-flex justify-content-between">
+                <strong>Detail Pasien</strong>
+                <div>
+                  <button
+                    className="btn btn-sm btn-warning me-2"
+                    onClick={() => openEdit(selectedItem)}
+                  >
+                    <i className="fas fa-edit"></i>
+                  </button>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() => handleDelete(selectedItem.id)}
+                  >
+                    <i className="fas fa-trash"></i>
+                  </button>
                 </div>
+              </div>
 
-                <h6>Riwayat Kunjungan:</h6>
-                {selectedPasien.riwayat.length === 0 ? (
-                  <p className="text-muted">Belum ada riwayat kunjungan</p>
-                ) : (
-                  <div className="table-responsive">
-                    <table className="table table-sm">
-                      <thead>
-                        <tr>
-                          <th>Tanggal</th>
-                          <th>Poli</th>
-                          <th>Diagnosa</th>
-                          <th>Obat</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedPasien.riwayat.map((r, index) => (
-                          <tr key={index}>
-                            <td>{new Date(r.tanggal).toLocaleDateString('id-ID')}</td>
-                            <td>{r.poli}</td>
-                            <td>{r.diagnosa}</td>
-                            <td>{r.obat}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+              <div className="card-body">
+                <p><strong>Nama:</strong> {selectedItem.pasien_nama}</p>
+                <div className="alert alert-danger">
+                  {selectedItem.penyakit}
+                </div>
+                <p><strong>Alamat:</strong> {selectedItem.alamat}</p>
+                <p><strong>Tanggal:</strong> {
+                  new Date(selectedItem.tanggal).toLocaleDateString('id-ID')
+                }</p>
               </div>
             </div>
           ) : (
-            <div className="card">
-              <div className="card-body text-center py-5">
-                <i className="fas fa-user-injured fa-3x text-muted mb-3"></i>
-                <p className="text-muted">Pilih pasien untuk melihat riwayat</p>
-              </div>
+            <div className="card text-center py-5">
+              <p className="text-muted">
+                Pilih data pasien untuk melihat detail
+              </p>
             </div>
           )}
         </div>
       </div>
+
+      {/* MODAL */}
+      {showModal && (
+        <div className="modal show d-block bg-dark bg-opacity-50">
+          <div className="modal-dialog">
+            <form className="modal-content" onSubmit={handleSubmit}>
+              <div className="modal-header bg-success text-white">
+                <h5>{isEdit ? 'Edit' : 'Tambah'} Riwayat Penyakit</h5>
+              </div>
+
+              <div className="modal-body">
+                <input
+                  className="form-control mb-2"
+                  placeholder="Nama Pasien"
+                  value={formData.pasien_nama}
+                  onChange={e =>
+                    setFormData({ ...formData, pasien_nama: e.target.value })
+                  }
+                  required
+                />
+
+                <input
+                  className="form-control mb-2"
+                  placeholder="Penyakit (DBD / TBC / HIV)"
+                  value={formData.penyakit}
+                  onChange={e =>
+                    setFormData({ ...formData, penyakit: e.target.value })
+                  }
+                  required
+                />
+
+                <select
+                  className="form-select mb-2"
+                  value={formData.lokasi_id}
+                  onChange={e =>
+                    setFormData({ ...formData, lokasi_id: e.target.value })
+                  }
+                  required
+                >
+                  <option value="">-- Pilih Desa --</option>
+                  {lokasiList.map(l => (
+                    <option key={l.id} value={l.id}>
+                      {l.nama_lokasi}
+                    </option>
+                  ))}
+                </select>
+
+                <textarea
+                  className="form-control mb-2"
+                  placeholder="Alamat Lengkap"
+                  value={formData.alamat}
+                  onChange={e =>
+                    setFormData({ ...formData, alamat: e.target.value })
+                  }
+                  required
+                />
+
+                <input
+                  type="date"
+                  className="form-control"
+                  value={formData.tanggal}
+                  onChange={e =>
+                    setFormData({ ...formData, tanggal: e.target.value })
+                  }
+                  required
+                />
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowModal(false)}
+                >
+                  Batal
+                </button>
+                <button className="btn btn-success">Simpan</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
