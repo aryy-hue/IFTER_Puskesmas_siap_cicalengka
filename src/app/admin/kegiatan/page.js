@@ -31,37 +31,53 @@ export default function KelolaKegiatanPage() {
     { id: 4, nama: 'Posyandu', code: 'PS' }
   ]
 
-  // ================= FETCH =================
-  const fetchData = async () => {
-    try {
-      const token = localStorage.getItem('token')
+// ================= FETCH =================
+const fetchData = async () => {
+  try {
+    const token = localStorage.getItem('token')
 
-      const [kegiatanRes, lokasiRes, adminRes] = await Promise.all([
-        fetch('http://localhost:5001/api/admin/kegiatan', {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch('http://localhost:5001/api/lokasi'),
-        fetch('http://localhost:5001/api/users?role=admin', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      ])
+    const [kegiatanRes, lokasiRes, adminRes] = await Promise.all([
+      fetch('http://localhost:5001/api/admin/kegiatan', {
+        headers: { Authorization: `Bearer ${token}` }
+      }),
+      fetch('http://localhost:5001/api/lokasi'),
+      fetch('http://localhost:5001/api/users?role=admin', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+    ])
 
-      const kegiatanData = await kegiatanRes.json()
-      const lokasiData = await lokasiRes.json()
-      const adminData = await adminRes.json()
+    // Parse responses dengan benar
+    const kegiatanData = await kegiatanRes.json()
+    const lokasiData = await lokasiRes.json()
+    const adminData = await adminRes.json()
 
-      setKegiatanList(Array.isArray(kegiatanData) ? kegiatanData : [])
-      setLokasiOptions(Array.isArray(lokasiData) ? lokasiData : [])
-      setAdminOptions(Array.isArray(adminData) ? adminData : [])
-    } catch (err) {
-      alert('Gagal mengambil data')
-      setKegiatanList([])
-      setLokasiOptions([])
+    console.log('Response dari API users:', adminData) // Debug
+
+    // Set state dengan struktur yang benar
+    setKegiatanList(Array.isArray(kegiatanData) ? kegiatanData : [])
+    setLokasiOptions(Array.isArray(lokasiData) ? lokasiData : [])
+    
+    // ADMIN DATA: Perhatikan struktur response
+    if (adminData && adminData.success && Array.isArray(adminData.data)) {
+      console.log('Admin data array:', adminData.data) // Debug
+      setAdminOptions(adminData.data)
+    } else {
+      console.warn('Struktur admin data tidak sesuai:', adminData)
       setAdminOptions([])
-    } finally {
-      setLoading(false)
     }
+
+  } catch (err) {
+    console.error('Fetch error:', err)
+    alert('Gagal mengambil data')
+    setKegiatanList([])
+    setLokasiOptions([])
+    setAdminOptions([])
+  } finally {
+    setLoading(false)
   }
+}
+
+
 
   useEffect(() => {
     fetchData()
@@ -132,49 +148,81 @@ export default function KelolaKegiatanPage() {
     e.preventDefault()
     const token = localStorage.getItem('token')
 
-    const payload = {
-      judul: formData.judul,
-      deskripsi: formData.deskripsi,
-      jenis_kegiatan_id: formData.jenis_kegiatan_id,
-      tanggal: formData.tanggal,
-      lokasi: formData.lokasi,
-      user_id: formData.user_id,
-      jam_mulai: formData.jam_mulai,
-      jam_selesai: formData.jam_selesai
-    }
-
-    const url =
-      modalType === 'add'
-        ? 'http://localhost:5001/api/admin/kegiatan'
-        : `http://localhost:5001/api/admin/kegiatan/${formData.id}`
-
-    const method = modalType === 'add' ? 'POST' : 'PUT'
-
-    const res = await fetch(url, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify(
-        modalType === 'add' ? { id: formData.id, ...payload } : payload
-      )
-    })
-
-    if (!res.ok) {
-      const err = await res.json()
-      alert(err.message || 'Gagal menyimpan data')
+    // Validasi data sebelum dikirim
+    if (!formData.judul || !formData.jenis_kegiatan_id || !formData.tanggal || 
+        !formData.lokasi || !formData.user_id) {
+      alert('Harap isi semua field yang wajib diisi!')
       return
     }
 
-    alert(modalType === 'add'
-      ? 'Kegiatan berhasil ditambahkan'
-      : 'Kegiatan berhasil diperbarui'
-    )
+    // Siapkan payload sesuai dengan yang diharapkan backend
+    const payload = {
+      judul: formData.judul.trim(),
+      deskripsi: formData.deskripsi.trim() || null, // Bisa null jika kosong
+      jenis_kegiatan_id: parseInt(formData.jenis_kegiatan_id),
+      tanggal: formData.tanggal,
+      lokasi_id: parseInt(formData.lokasi), // PERUBAHAN: lokasi_id, bukan lokasi
+      user_id: parseInt(formData.user_id),
+      jam_mulai: formData.jam_mulai ? `${formData.jam_mulai}:00` : '08:00:00',
+      jam_selesai: formData.jam_selesai ? `${formData.jam_selesai}:00` : '10:00:00'
+    }
 
-    setShowModal(false)
-    fetchData()
+    // Untuk ADD, tambahkan id ke payload
+    if (modalType === 'add') {
+      payload.id = formData.id
+    }
+
+    console.log('Payload yang akan dikirim:', payload) // Debug
+
+    const url = modalType === 'add'
+      ? 'http://localhost:5001/api/admin/kegiatan'
+      : `http://localhost:5001/api/admin/kegiatan/${formData.id}`
+
+    const method = modalType === 'add' ? 'POST' : 'PUT'
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      })
+
+      const responseData = await res.json()
+      
+      if (!res.ok) {
+        // Tampilkan error detail dari backend
+        console.error('Error response:', responseData)
+        throw new Error(responseData.message || responseData.error || `Error ${res.status}: Gagal menyimpan data`)
+      }
+
+      // Success
+      alert(modalType === 'add'
+        ? 'Kegiatan berhasil ditambahkan'
+        : 'Kegiatan berhasil diperbarui'
+      )
+
+      setShowModal(false)
+      fetchData()
+
+    } catch (error) {
+      console.error('Submit error:', error)
+      
+      // Tampilkan error yang lebih informatif
+      if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+        alert('Koneksi ke server gagal. Periksa koneksi internet atau pastikan server berjalan.')
+      } else if (error.message.includes('401')) {
+        alert('Sesi telah berakhir. Silakan login kembali.')
+        localStorage.removeItem('token')
+        // Redirect ke login jika diperlukan
+      } else {
+        alert(error.message || 'Terjadi kesalahan saat menyimpan data')
+      }
+    }
   }
+
 
   if (loading) {
     return (
@@ -318,12 +366,20 @@ export default function KelolaKegiatanPage() {
 
                 <select className="form-select mb-2"
                   value={formData.user_id}
-                  onChange={e=>setFormData({...formData, user_id:e.target.value})}
+                  onChange={e => setFormData({...formData, user_id: e.target.value})}
                   required>
                   <option value="">-- Pilih Admin --</option>
-                  {adminOptions.map(a=>(
-                    <option key={a.id} value={a.id}>{a.name}</option>
-                  ))}
+                  {adminOptions.length > 0 ? (
+                    adminOptions.map(a => (
+                      <option key={a.id} value={a.id}>
+                        {a.name || a.full_name || `Admin ${a.id}`}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>
+                      {loading ? 'Memuat admin...' : 'Tidak ada admin tersedia'}
+                    </option>
+                  )}
                 </select>
 
                 <div className="row">

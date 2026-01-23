@@ -9,6 +9,7 @@ const MENU = [
   { label: 'Kegiatan', href: '/admin/kegiatan', icon: 'fa-calendar-check' },
   { label: 'Laporan', href: '/admin/laporan', icon: 'fa-file-alt' },
   { label: 'Riwayat Pasien', href: '/admin/riwayat-pasien', icon: 'fa-notes-medical' },
+  { label: 'Statistik Penyakit', href: '/admin/statistik-penyakit', icon: 'fa-chart-line' },
 ]
 
 export default function AdminLayout({ children }) {
