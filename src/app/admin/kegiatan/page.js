@@ -46,11 +46,18 @@ export default function KelolaKegiatanPage() {
         })
       ])
 
-      setKegiatanList(await kegiatanRes.json())
-      setLokasiOptions(await lokasiRes.json())
-      setAdminOptions(await adminRes.json())
+      const kegiatanData = await kegiatanRes.json()
+      const lokasiData = await lokasiRes.json()
+      const adminData = await adminRes.json()
+
+      setKegiatanList(Array.isArray(kegiatanData) ? kegiatanData : [])
+      setLokasiOptions(Array.isArray(lokasiData) ? lokasiData : [])
+      setAdminOptions(Array.isArray(adminData) ? adminData : [])
     } catch (err) {
       alert('Gagal mengambil data')
+      setKegiatanList([])
+      setLokasiOptions([])
+      setAdminOptions([])
     } finally {
       setLoading(false)
     }

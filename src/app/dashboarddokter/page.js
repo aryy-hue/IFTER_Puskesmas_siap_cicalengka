@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Header from '../../../components/Header';
+import DokterLayout from './dokterLayout';
 import Footer from '../../../components/Footer';
 import '../globals.css';
 
@@ -16,6 +17,7 @@ export default function DokterPage() {
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [alertType, setAlertType] = useState('success');
+  const [doctorName, setDoctorName] = useState('');
 
   // Fungsi untuk mengubah status kehadiran - DARI Component/Dokter.js
   const ubahStatusKehadiran = () => {
@@ -68,6 +70,17 @@ export default function DokterPage() {
         disabled: true
       });
     }
+
+    // Ambil nama dokter dari localStorage
+    const userString = localStorage.getItem('user');
+    if (userString) {
+      try {
+        const user = JSON.parse(userString);
+        setDoctorName(user.name || 'Dokter');
+      } catch (e) {
+        setDoctorName('Dokter');
+      }
+    }
   }, []);
 
   return (
@@ -101,10 +114,10 @@ export default function DokterPage() {
                 <div className="card-body p-4">
                   <div className="row align-items-center">
                     <div className="col-md-8">
-                      <h2 className="text-success mb-2">Selamat Datang, Dr. Siti Rahayu!</h2>
+                      <h2 className="text-success mb-2">Selamat Datang, {doctorName}!</h2>
                       <p className="text-muted mb-0">
-                        Spesialis Anak - Selamat bertugas di Puskesmas Cicalengka. 
-                        Mari berikan pelayanan terbaik untuk kesehatan anak.
+                        Selamat bertugas di Puskesmas Cicalengka. 
+                        Mari berikan pelayanan terbaik untuk kesehatan masyarakat.
                       </p>
                     </div>
                     <div className="col-md-4 text-md-end">
