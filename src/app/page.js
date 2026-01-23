@@ -183,7 +183,7 @@ const openPoliModal = async (poli) => {
                   rel="noopener noreferrer"
                   className="btn btn-success"
                 >
-                  Daftar Poli
+                  Daftar Online
                 </a>
 
                 <button className="btn btn-secondary" onClick={closeModal}>

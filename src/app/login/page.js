@@ -25,74 +25,65 @@ export default function LoginPage() {
   }
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setIsLoading(true)
+    e.preventDefault()
+    setError('')
+    setIsLoading(true)
 
-    try {
-      const res = await fetch('http://localhost:5001/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      })
+    try {
+      const res = await fetch('http://localhost:5001/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
 
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Login gagal')
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Login gagal')
 
-      const { token, user } = data
+      const { token, user } = data
 
-      // Simpan Data
-      localStorage.setItem('token', token)
-      localStorage.setItem('user', JSON.stringify({
+      // 1. Simpan Token & User di LocalStorage
+      localStorage.setItem('token', token)
+      const userData = {
         id: user.id,
         name: user.full_name,
         role: user.role,
         img: user.img || '/img/default-avatar.png'
-      }))
-
-      document.cookie = `user=${encodeURIComponent(JSON.stringify({
-        id: user.id,
-        role: user.role
-      }))}; path=/`;
-
-      // --- 2. TAMPILKAN NOTIFIKASI SUKSES DISINI ---
-      await Swal.fire({
-        title: 'Login Berhasil!',
-        text: `Selamat datang kembali, ${user.full_name}`, // Menyapa nama user
-        icon: 'success',
-        timer: 1500, // Otomatis tutup dalam 1.5 detik
-        showConfirmButton: false,
-        timerProgressBar: true,
-      })
-      // ----------------------------------------------
-
-      // Redirect Sesuai Role
-      if (user.role === 'dokter') {
-        router.replace('/dashboarddokter')
-      } else if (user.role === 'admin' || user.role === 'superadmin') {
-        router.replace('/admin')
-      } else {
-        router.replace('/')
       }
+      localStorage.setItem('user', JSON.stringify(userData))
 
-    } catch (err) {
-      // --- 3. (Opsional) NOTIFIKASI ERROR MENARIK ---
-      // Jika ingin errornya juga pakai popup, gunakan ini:
-      /*
-      Swal.fire({
-        icon: 'error',
-        title: 'Gagal Masuk',
-        text: err.message,
-        confirmButtonColor: '#d33'
-      })
-      */
+      // 2. PERBAIKAN PENTING: Set Cookie untuk Token & User!
+      // Middleware mengecek cookie 'user' untuk validasi role
+      document.cookie = `token=${token}; path=/; max-age=86400; SameSite=Lax`; 
+      document.cookie = `user=${encodeURIComponent(JSON.stringify(userData))}; path=/; max-age=86400; SameSite=Lax`;
+      Swal.fire({
+        title: 'Login Berhasil!',
+        text: `Selamat datang kembali, ${user.full_name}`,
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false,
+        timerProgressBar: true,
+        // Redirect akan jalan saat timer selesai atau alert ditutup
+        willClose: () => {
+             // Redirect Sesuai Role
+             if (user.role === 'dokter') {
+                 router.replace('/dashboarddokter')
+             } else if (user.role === 'admin' || user.role === 'superadmin') {
+                 router.replace('/admin')
+             } else {
+                 router.replace('/')
+             }
+        }
+      });
       
-      // Atau tetap pakai state error biasa (teks merah)
-      setError(err.message)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+      // Jika ingin instan tanpa menunggu alert tutup, hapus 'willClose' di atas
+      // dan jalankan router.replace di sini (tanpa await di Swal).
+
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <>

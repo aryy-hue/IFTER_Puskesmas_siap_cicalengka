@@ -1,6 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
-import DokterLayout from './DokterLayout';
+import Header from '../../../components/Header';
+import DokterLayout from './dokterLayout';
+import Footer from '../../../components/Footer';
 import '../globals.css';
 
 export default function DokterPage() {
@@ -16,7 +18,10 @@ export default function DokterPage() {
     disabled: true
   });
 
-  const [alert, setAlert] = useState({ show: false, msg: '', type: 'success' });
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertType, setAlertType] = useState('success');
+  const [doctorName, setDoctorName] = useState('');
 
   // --- LOGIKA REFRESH DATA (DIPANGGIL BERKALA) ---
   const refreshData = async () => {
@@ -123,7 +128,18 @@ export default function DokterPage() {
     } catch (error) {
       setAlert({ show: true, msg: 'Terjadi kesalahan koneksi.', type: 'danger' });
     }
-  };
+
+    // Ambil nama dokter dari localStorage
+    const userString = localStorage.getItem('user');
+    if (userString) {
+      try {
+        const user = JSON.parse(userString);
+        setDoctorName(user.name || 'Dokter');
+      } catch (e) {
+        setDoctorName('Dokter');
+      }
+    }
+  }, []);
 
   return (
     <DokterLayout>
@@ -135,11 +151,65 @@ export default function DokterPage() {
         </div>
       )}
 
-      {/* Header Welcome */}
-      <div className="card border-0 shadow-sm mb-5 p-4">
-        <h2 className="text-success fw-bold">Selamat Datang, {userData.full_name}!</h2>
-        <p className="text-muted mb-0">Status dashboard Anda akan diperbarui secara otomatis sesuai waktu server.</p>
-      </div>
+      <main className="py-4">
+        <div className="container">
+          {/* Welcome Section */}
+          <div className="row mb-5">
+            <div className="col-12">
+              <div className="card border-0 shadow-sm">
+                <div className="card-body p-4">
+                  <div className="row align-items-center">
+                    <div className="col-md-8">
+                      <h2 className="text-success mb-2">Selamat Datang, {doctorName}!</h2>
+                      <p className="text-muted mb-0">
+                        Selamat bertugas di Puskesmas Cicalengka. 
+                        Mari berikan pelayanan terbaik untuk kesehatan masyarakat.
+                      </p>
+                    </div>
+                    <div className="col-md-4 text-md-end">
+                      <div className="avatar bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center">
+                        <i className="fas fa-user-md"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Status Kehadiran Section */}
+          <div className="row mb-5">
+            <div className="col-12">
+              <div className="card border-0 shadow-sm">
+                <div className="card-header bg-success text-white py-3">
+                  <h5 className="card-title mb-0">
+                    <i className="fas fa-user-clock me-2"></i>Status Kehadiran Hari Ini
+                  </h5>
+                </div>
+                <div className="card-body p-4">
+                  <div className="row align-items-center">
+                    <div className="col-md-6">
+                      <h4 id="statusText" className={statusKehadiran.text === 'Tersedia' ? 'text-success' : 'text-warning'}>
+                        {statusKehadiran.text}
+                      </h4>
+                      <p id="statusTime" className="text-muted mb-0">{statusKehadiran.time}</p>
+                    </div>
+                    <div className="col-md-6 text-md-end">
+                      <button 
+                        id="btnKehadiran"
+                        className={statusKehadiran.buttonClass}
+                        onClick={ubahStatusKehadiran}
+                        disabled={statusKehadiran.disabled}
+                      >
+                        <i className="fas fa-check-circle me-2"></i>
+                        {statusKehadiran.buttonText}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
       {/* Kartu Status (Tombol) */}
       <div className="card border-0 shadow-sm mb-5">
