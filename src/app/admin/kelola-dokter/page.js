@@ -223,7 +223,7 @@ export default function KelolaDokterPage() {
               <thead>
                 <tr>
                   <th>Nama</th>
-                  <th>Spesialis</th>
+                  <th>Profesi</th>
                   <th>Poli</th>
                   <th width="120" className="text-center">Aksi</th>
                 </tr>
@@ -286,19 +286,9 @@ export default function KelolaDokterPage() {
                   required
                 />
 
-                <input className="form-control mb-2" placeholder="Spesialis"
+                <input className="form-control mb-2" placeholder="Profesi"
                   value={formTambahDokter.spesialis}
                   onChange={(e)=>setFormTambahDokter({...formTambahDokter,spesialis:e.target.value})}
-                />
-
-                <input className="form-control mb-2" placeholder="No Telepon"
-                  value={formTambahDokter.no_telepon}
-                  onChange={(e)=>setFormTambahDokter({...formTambahDokter,no_telepon:e.target.value})}
-                />
-
-                <input className="form-control mb-2" placeholder="Email"
-                  value={formTambahDokter.email}
-                  onChange={(e)=>setFormTambahDokter({...formTambahDokter,email:e.target.value})}
                 />
 
                 <select className="form-select" required

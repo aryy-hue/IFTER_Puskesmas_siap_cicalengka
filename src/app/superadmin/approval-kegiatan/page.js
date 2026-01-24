@@ -1,110 +1,179 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function ApprovalKegiatanPage() {
+  const [kegiatanList, setKegiatanList] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const [searchTerm, setSearchTerm] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [selectedData, setSelectedData] = useState(null)
 
-  // dummy data (struktur mengikuti admin)
-  const kegiatanList = [
-    {
-      id: 'PY-001',
-      judul: 'Penyuluhan Gizi',
-      jenis_kegiatan: 'Penyuluhan',
-      tanggal: '2025-11-30',
-      jam_mulai: '09:00',
-      jam_selesai: '11:00',
-      lokasi: 'Aula Puskesmas',
-      deskripsi: 'Penyuluhan gizi untuk masyarakat umum.',
-      status: 'menunggu',
-      laporan: {
-        judul_laporan: 'Laporan Penyuluhan Gizi',
-        detail_kegiatan: 'Kegiatan berjalan lancar dengan antusias warga.',
-        foto: '/img/puskesmas.jpg'
-      }
-    }
-  ]
+  // ================= FETCH =================
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem('token')
 
+      const res = await fetch(
+        'http://localhost:5001/api/superadmin/kegiatan',
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      )
+
+      const data = await res.json()
+
+      // 🔐 AMAN: pastikan selalu array
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data.data)
+        ? data.data
+        : []
+
+      setKegiatanList(list)
+    } catch (err) {
+      console.error(err)
+      alert('Gagal mengambil data kegiatan')
+      setKegiatanList([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  // ================= FILTER =================
+  const filteredList = kegiatanList.filter(k => {
+    const keyword = searchTerm.toLowerCase()
+    return (
+      k.judul?.toLowerCase().includes(keyword) ||
+      k.id?.toLowerCase().includes(keyword) ||
+      k.status?.toLowerCase().includes(keyword)
+    )
+  })
+
+  // ================= ACTION =================
   const openDetail = (item) => {
     setSelectedData(item)
     setShowModal(true)
   }
 
+  const updateStatus = async (id, status) => {
+    const token = localStorage.getItem('token')
+
+    await fetch(
+      `http://localhost:5001/api/superadmin/kegiatan/${id}/${status}`,
+      {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    )
+
+    setShowModal(false)
+    fetchData()
+  }
+
+  if (loading) {
+    return (
+      <div className="text-center py-5">
+        <div className="spinner-border text-success"></div>
+      </div>
+    )
+  }
+const formatTanggal = (date) => {
+  if (!date) return '-'
+  return new Date(date).toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  })
+}
+
+const formatJam = (time) => {
+  if (!time) return '-'
+  return time.slice(0, 5) // HH:mm
+}
+
+  // ================= RENDER =================
   return (
-    <div>
-      <h1 className="h4 mb-4">Approval Kegiatan</h1>
+    <div className="container-fluid p-4">
+      <h4 className="mb-3">Approval Kegiatan</h4>
 
       {/* FILTER */}
-      <div className="card mb-3">
-        <div className="card-body row g-2">
-          <div className="col-md-4">
-            <input className="form-control" placeholder="Cari nama kegiatan" />
-          </div>
-          <div className="col-md-3">
-            <select className="form-select">
-              <option value="">Semua Jenis</option>
-              <option>Penyuluhan</option>
-              <option>Vaksinasi</option>
-              <option>Posyandu</option>
-            </select>
-          </div>
-          <div className="col-md-3">
-            <input type="date" className="form-control" />
-          </div>
-        </div>
+      <div className="d-flex gap-2 mb-3">
+        <input
+          className="form-control w-25"
+          placeholder="Cari ID / Judul / Status"
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+        />
       </div>
 
       {/* TABLE */}
       <div className="card shadow-sm border-0">
-        <div className="card-body table-responsive">
-          <table className="table table-bordered align-middle">
-            <thead className="table-success">
+        <table className="table table-hover align-middle mb-0">
+          <thead className="table-success">
+            <tr>
+              <th>ID</th>
+              <th>Judul</th>
+              <th>Tanggal</th>
+              <th>Lokasi</th>
+              <th>Status</th>
+              <th width="180" className="text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredList.length === 0 && (
               <tr>
-                <th>ID</th>
-                <th>Nama Kegiatan</th>
-                <th>Tanggal</th>
-                <th>Status</th>
-                <th>Aksi</th>
+                <td colSpan="6" className="text-center text-muted py-4">
+                  Tidak ada data
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {kegiatanList.map((item) => (
-                <tr key={item.id}>
-                  <td>{item.id}</td>
-                  <td>{item.judul}</td>
-                  <td>{item.tanggal}</td>
-                  <td>
-                    <span className="badge bg-warning">Menunggu</span>
-                  </td>
-                  <td>
-                    <button
-                      className="btn btn-info btn-sm me-2"
-                      onClick={() => openDetail(item)}
-                    >
-                      Detail
-                    </button>
-                    <button className="btn btn-success btn-sm me-1">Approve</button>
-                    <button className="btn btn-danger btn-sm">Tolak</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            )}
+
+            {filteredList.map(item => (
+              <tr key={item.id}>
+                <td>{item.id}</td>
+                <td>{item.judul}</td>
+                <td>{new Date(item.tanggal).toLocaleDateString('id-ID')}</td>
+                <td>{item.nama_lokasi || '-'}</td>
+                <td>
+                  <span className={`badge ${
+                    item.status === 'menunggu'
+                      ? 'bg-warning text-dark'
+                      : item.status === 'disetujui'
+                      ? 'bg-success'
+                      : 'bg-danger'
+                  }`}>
+                    {item.status}
+                  </span>
+                </td>
+                <td className="text-center">
+                  <button
+                    className="btn btn-info btn-sm me-1"
+                    onClick={() => openDetail(item)}
+                  >
+                    Detail
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {/* MODAL DETAIL KEGIATAN */}
+      {/* MODAL DETAIL */}
       {showModal && selectedData && (
         <>
           <div className="modal-backdrop show"></div>
           <div className="modal show d-block">
             <div className="modal-dialog modal-lg modal-dialog-centered">
-              <div className="modal-content border-0 shadow">
+              <div className="modal-content shadow border-0">
                 <div className="modal-header bg-success text-white">
-                  <h5 className="modal-title">
-                    Detail Kegiatan & Laporan
-                  </h5>
+                  <h5>Detail Kegiatan & Laporan</h5>
                   <button
                     className="btn-close btn-close-white"
                     onClick={() => setShowModal(false)}
@@ -112,45 +181,69 @@ export default function ApprovalKegiatanPage() {
                 </div>
 
                 <div className="modal-body">
-                  {/* INFORMASI KEGIATAN */}
-                  <h6 className="fw-bold mb-2">Informasi Kegiatan</h6>
+                  <h6 className="fw-bold">Informasi Kegiatan</h6>
                   <table className="table table-sm">
                     <tbody>
                       <tr><th>ID</th><td>{selectedData.id}</td></tr>
-                      <tr><th>Nama</th><td>{selectedData.judul}</td></tr>
-                      <tr><th>Jenis</th><td>{selectedData.jenis_kegiatan}</td></tr>
+                      <tr><th>Judul</th><td>{selectedData.judul}</td></tr>
                       <tr>
                         <th>Waktu</th>
                         <td>
-                          {selectedData.tanggal} | {selectedData.jam_mulai} - {selectedData.jam_selesai} WIB
+                          {formatTanggal(selectedData.tanggal)} |  
+                          {formatJam(selectedData.jam_mulai)} - {formatJam(selectedData.jam_selesai)} WIB
                         </td>
                       </tr>
-                      <tr><th>Lokasi</th><td>{selectedData.lokasi}</td></tr>
+                      <tr><th>Lokasi</th><td>{selectedData.nama_lokasi}</td></tr>
                       <tr><th>Deskripsi</th><td>{selectedData.deskripsi}</td></tr>
                     </tbody>
                   </table>
 
                   <hr />
 
-                  {/* INFORMASI LAPORAN */}
-                  <h6 className="fw-bold mb-2">Laporan Kegiatan</h6>
-                  <p><strong>Judul:</strong> {selectedData.laporan.judul_laporan}</p>
-                  <p>{selectedData.laporan.detail_kegiatan}</p>
+                  <h6 className="fw-bold">Laporan Kegiatan</h6>
+                  {selectedData.laporan ? (
+                    <>
+                      <p><strong>Judul:</strong> {selectedData.laporan.judul_laporan}</p>
+                      <p>{selectedData.laporan.detail_kegiatan}</p>
 
-                  <div>
-                    <strong>Foto Kegiatan:</strong><br />
-                    <img
-                      src={selectedData.laporan.foto}
-                      alt="Foto kegiatan"
-                      className="img-fluid rounded mt-2"
-                      style={{ maxHeight: '250px' }}
-                    />
-                  </div>
+                      {selectedData.laporan.img && (
+                        <img
+                          src={`data:image/jpeg;base64,${selectedData.laporan.img}`}
+                          className="img-fluid rounded"
+                          style={{ maxHeight: 250 }}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <span className="badge bg-secondary">
+                      Belum ada laporan
+                    </span>
+                  )}
                 </div>
 
                 <div className="modal-footer">
-                  <button className="btn btn-danger">Tolak</button>
-                  <button className="btn btn-success">Approve</button>
+                  {selectedData.status === 'menunggu' && (
+                    <>
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => updateStatus(selectedData.id, 'reject')}
+                      >
+                        Tolak
+                      </button>
+                      <button
+                        className="btn btn-success"
+                        onClick={() => updateStatus(selectedData.id, 'approve')}
+                      >
+                        Approve
+                      </button>
+                    </>
+                  )}
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => setShowModal(false)}
+                  >
+                    Tutup
+                  </button>
                 </div>
               </div>
             </div>

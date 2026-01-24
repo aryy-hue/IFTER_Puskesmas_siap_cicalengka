@@ -5,34 +5,10 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 
 const MENU = [
-  {
-    label: 'Dashboard',
-    href: '/superadmin',
-    icon: 'fa-tachometer-alt'
-  },
-  {
-    label: 'Approval Akun',
-    href: '/superadmin/approval-akun',
-    icon: 'fa-user-check'
-  },
-  {
-    label: 'Approval Kegiatan',
-    href: '/superadmin/approval-kegiatan',
-    icon: 'fa-calendar-check'
-  },
-  {
-    label: 'Approval Laporan',
-    href: '/superadmin/approval-laporan',
-    icon: 'fa-file-signature'
-  },
-  {
-    label: 'Approval Izin',
-    href: '/superadmin/approval-izin',
-    icon: 'fa-notes-medical'
-  }
-]
+  { label: 'Dashboard', href: '/dokter', icon: 'fa-home' },
+  { label: 'Pengajuan Izin', href: '/dokter/izin', icon: 'fa-file-medical' },]
 
-export default function SuperAdminLayout({ children }) {
+export default function DokterLayout({ children }) {
   const router = useRouter()
   const pathname = usePathname()
 
@@ -56,8 +32,8 @@ export default function SuperAdminLayout({ children }) {
     try {
       const parsedUser = JSON.parse(userData)
 
-      // SUPERADMIN ONLY
-      if (parsedUser.role !== 'superadmin') {
+      // 🔐 KHUSUS DOKTER
+      if (parsedUser.role !== 'dokter') {
         router.replace('/')
         return
       }
@@ -87,15 +63,14 @@ export default function SuperAdminLayout({ children }) {
 
             <div className="d-flex align-items-center">
               <div className="me-3">
-                <i className="fas fa-user-shield fa-2x"></i>
+                <i className="fas fa-user-md fa-2x"></i>
               </div>
               <div>
                 <h1 className="h5 mb-0 fw-bold">SIAPCICALENGKA</h1>
-                <small>Super Admin Panel</small>
+                <small>Dokter</small>
               </div>
             </div>
 
-            {/* DESKTOP NAV */}
             <nav className="d-none d-lg-block">
               <ul className="navbar-nav d-flex flex-row align-items-center gap-2">
                 {MENU.map(item => (
@@ -119,20 +94,17 @@ export default function SuperAdminLayout({ children }) {
                     className="btn btn-light text-success fw-bold rounded-pill"
                     onClick={() => setProfileOpen(!profileOpen)}
                   >
-                    <i className="fas fa-user-shield me-1"></i>
-                    {user?.name ?? 'Super Admin'}
+                    <i className="fas fa-user-md me-1"></i>
+                    {user?.name ?? 'Dokter'}
                   </button>
 
                   {profileOpen && (
                     <div className="dropdown-menu dropdown-menu-end show mt-2">
                       <span className="dropdown-item-text text-muted">
-                        Role: Super Admin
+                        Role: {user?.role}
                       </span>
                       <hr />
-                      <button
-                        className="dropdown-item text-danger"
-                        onClick={logout}
-                      >
+                      <button className="dropdown-item text-danger" onClick={logout}>
                         <i className="fas fa-sign-out-alt me-2"></i>
                         Logout
                       </button>
@@ -142,7 +114,6 @@ export default function SuperAdminLayout({ children }) {
               </ul>
             </nav>
 
-            {/* MOBILE TOGGLE */}
             <button
               className="btn btn-outline-light border-0 d-lg-none"
               onClick={() => setMobileMenuOpen(true)}
@@ -232,10 +203,6 @@ export default function SuperAdminLayout({ children }) {
           text-decoration: none;
           color: #198754;
           font-weight: 500;
-        }
-
-        .mobile-nav-link i {
-          color: #198754;
         }
 
         .mobile-nav-link.active {
