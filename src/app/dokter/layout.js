@@ -67,7 +67,7 @@ export default function DokterLayout({ children }) {
               </div>
               <div>
                 <h1 className="h5 mb-0 fw-bold">SIAPCICALENGKA</h1>
-                <small>Dokter</small>
+                <small>Petugas Kesehatan</small>
               </div>
             </div>
 

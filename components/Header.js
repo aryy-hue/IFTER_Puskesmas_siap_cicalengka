@@ -86,7 +86,7 @@ export default function Header() {
                 <i className="fas fa-heartbeat logo-icon"></i>
               </div>
               <div>
-                <h1 className="h4 mb-0 fw-bold">SIAPCICALENGKA</h1>
+                <h1 className="h4 mb-0 fw-bold">SIAPCicalengka</h1>
                 <small className="text-light">Puskesmas Cicalengka</small>
               </div>
             </div>
@@ -115,7 +115,7 @@ export default function Header() {
                 <i className="fas fa-heartbeat logo-icon"></i>
               </div>
               <div>
-                <h1 className="h4 mb-0 fw-bold">SIAPCICALENGKA</h1>
+                <h1 className="h4 mb-0 fw-bold">SIAPCicalengka</h1>
                 <small className="text-light">Puskesmas Cicalengka</small>
               </div>
             </div>
@@ -139,7 +139,7 @@ export default function Header() {
                     className={`nav-link ${pathname === '/peta' ? 'active' : ''}`} 
                     href="/peta"
                   >
-                    <i className="fas fa-map-marked-alt me-1"></i>Peta Interaktif
+                    <i className="fas fa-map-marked-alt me-1"></i>Pelayanan Luar Gedung
                   </Link>
                 </li>
                 
@@ -240,7 +240,7 @@ export default function Header() {
                     <i className="fas fa-map-marked-alt"></i>
                   </div>
                   <div className="nav-text">
-                    <span>Peta Interaktif</span>
+                    <span>Pelayanan Luar Gedung</span>
                     <small className="text-muted">Kegiatan puskesmas</small>
                   </div>
                 </Link>

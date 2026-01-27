@@ -8,9 +8,11 @@ const MENU = [
   { label: 'Dashboard', href: '/admin', icon: 'fa-tachometer-alt' },
   { label: 'Kegiatan', href: '/admin/kegiatan', icon: 'fa-calendar-check' },
   { label: 'Laporan', href: '/admin/laporan', icon: 'fa-file-alt' },
+  { label: 'Kelola', href: '/admin/kelola-dokter', icon: 'fa-user-md' },
   { label: 'Riwayat Pasien', href: '/admin/riwayat-pasien', icon: 'fa-notes-medical' },
   { label: 'Statistik Penyakit', href: '/admin/statistik-penyakit', icon: 'fa-chart-line' },
 ]
+
 
 export default function AdminLayout({ children }) {
   const router = useRouter()
@@ -68,7 +70,7 @@ export default function AdminLayout({ children }) {
                 <i className="fas fa-heartbeat fa-2x"></i>
               </div>
               <div>
-                <h1 className="h5 mb-0 fw-bold">SIAPCICALENGKA</h1>
+                <h1 className="h5 mb-0 fw-bold">SIAPCicalengka</h1>
                 <small>Puskesmas Cicalengka</small>
               </div>
             </div>

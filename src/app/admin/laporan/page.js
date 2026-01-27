@@ -7,6 +7,7 @@ export default function LaporanPage() {
   const [laporan, setLaporan] = useState([])
   const [kegiatanList, setKegiatanList] = useState([])
   const [selectedKegiatan, setSelectedKegiatan] = useState(null)
+  const [previewImg, setPreviewImg] = useState(null)
 
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -77,6 +78,10 @@ export default function LaporanPage() {
       detail_kegiatan: item.detail_kegiatan,
       img: null
     })
+
+    setPreviewImg(
+      item.img ? `data:image/jpeg;base64,${item.img}` : null
+    )
   }
 
   // ================= SUBMIT =================
@@ -140,127 +145,134 @@ export default function LaporanPage() {
 const handlePDF = (item) => {
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
-  
-  // Tambahkan header/kop surat (gambar)
-  // Anda perlu mengonversi gambar ke base64 atau URL
-  // Contoh: doc.addImage(headerImageData, 'PNG', 10, 10, 190, 40)
-  
-  // Atau jika Anda ingin membuat kop surat manual:
+  const pageHeight = doc.internal.pageSize.getHeight()
+
+  // ================= HEADER =================
   doc.setFontSize(14)
   doc.setFont("helvetica", "bold")
   doc.text('PEMERINTAH KABUPATEN BANDUNG', pageWidth / 2, 15, { align: 'center' })
   doc.text('DINAS KESEHATAN', pageWidth / 2, 23, { align: 'center' })
   doc.setFontSize(16)
   doc.text('PUSKESMAS CICALENGKA DTP', pageWidth / 2, 31, { align: 'center' })
-  
+
   doc.setFontSize(10)
   doc.setFont("helvetica", "normal")
-  doc.text('Jln. Raya Cicalengka No.321 Telp. (022) 7949217 Kode Pos 40395', pageWidth / 2, 39, { align: 'center' })
-  doc.text('E-mail : puskicalengka_bandungkab@yahoo.co.id', pageWidth / 2, 45, { align: 'center' })
-  
-  // Garis pemisah
+  doc.text(
+    'Jln. Raya Cicalengka No.321 Telp. (022) 7949217 Kode Pos 40395',
+    pageWidth / 2,
+    39,
+    { align: 'center' }
+  )
+  doc.text(
+    'E-mail : puskicalengka_bandungkab@yahoo.co.id',
+    pageWidth / 2,
+    45,
+    { align: 'center' }
+  )
+
   doc.setLineWidth(0.5)
   doc.line(10, 50, pageWidth - 10, 50)
   doc.line(10, 51, pageWidth - 10, 51)
-  
-  // Judul utama
+
+  // ================= JUDUL =================
   doc.setFontSize(14)
   doc.setFont("helvetica", "bold")
   doc.text('LAPORAN KEGIATAN PUSKESMAS', pageWidth / 2, 65, { align: 'center' })
-  
-  // Spasi
-  doc.setFontSize(11)
-  doc.setFont("helvetica", "normal")
-  
-  // Data laporan dengan format rapi
+
   let yPosition = 80
-  
-  // Judul Laporan
-  doc.setFont("helvetica", "bold")
-  doc.text('Judul Laporan:', 15, yPosition)
-  doc.setFont("helvetica", "normal")
-  doc.text(`: ${item.judul_laporan}`, 50, yPosition)
-  yPosition += 8
-  
-  // Tanggal Laporan
-  doc.setFont("helvetica", "bold")
-  doc.text('Tanggal Laporan:', 15, yPosition)
-  doc.setFont("helvetica", "normal")
-  doc.text(`: ${new Date(item.tanggal_laporan).toLocaleDateString('id-ID', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })}`, 50, yPosition)
-  yPosition += 8
-  
-  // Kegiatan
-  doc.setFont("helvetica", "bold")
-  doc.text('Kegiatan:', 15, yPosition)
-  doc.setFont("helvetica", "normal")
-  doc.text(`: ${item.kegiatan.judul}`, 50, yPosition)
-  yPosition += 8
-  
-  // Tanggal Kegiatan
-  doc.setFont("helvetica", "bold")
-  doc.text('Tanggal Kegiatan:', 15, yPosition)
-  doc.setFont("helvetica", "normal")
-  doc.text(`: ${new Date(item.kegiatan.tanggal).toLocaleDateString('id-ID')}`, 50, yPosition)
-  yPosition += 8
-  
-  // Waktu Kegiatan
-  doc.setFont("helvetica", "bold")
-  doc.text('Waktu Kegiatan:', 15, yPosition)
-  doc.setFont("helvetica", "normal")
-  doc.text(`: ${item.kegiatan.jam_mulai} - ${item.kegiatan.jam_selesai}`, 50, yPosition)
-  yPosition += 8
-  
-  // Lokasi Kegiatan
-  doc.setFont("helvetica", "bold")
-  doc.text('Lokasi Kegiatan:', 15, yPosition)
-  doc.setFont("helvetica", "normal")
-  doc.text(`: ${item.kegiatan.lokasi}`, 50, yPosition)
-  yPosition += 12
-  
-  // Detail Kegiatan dengan judul terpisah
+  doc.setFontSize(11)
+
+  const row = (label, value) => {
+    doc.setFont("helvetica", "bold")
+    doc.text(label, 15, yPosition)
+    doc.setFont("helvetica", "normal")
+    doc.text(`: ${value}`, 50, yPosition)
+    yPosition += 8
+  }
+
+  row('Judul Laporan', item.judul_laporan)
+
+  row(
+    'Tanggal Laporan',
+    new Date(item.tanggal_laporan).toLocaleDateString('id-ID', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  )
+
+  row('Kegiatan', item.kegiatan.judul)
+  row(
+    'Tanggal Kegiatan',
+    new Date(item.kegiatan.tanggal).toLocaleDateString('id-ID')
+  )
+  row('Waktu Kegiatan', `${item.kegiatan.jam_mulai} - ${item.kegiatan.jam_selesai}`)
+  row('Lokasi Kegiatan', item.kegiatan.lokasi)
+
+  yPosition += 6
+
+  // ================= DETAIL =================
   doc.setFont("helvetica", "bold")
   doc.text('DETAIL KEGIATAN', pageWidth / 2, yPosition, { align: 'center' })
-  yPosition += 8
-  
-  // Garis bawah judul detail
+  yPosition += 4
+
   doc.setLineWidth(0.3)
   doc.line(pageWidth / 2 - 40, yPosition, pageWidth / 2 + 40, yPosition)
   yPosition += 10
-  
-  // Isi detail kegiatan dengan alignment justify
+
+  // ================= FOTO (DARI BLOB BASE64) =================
+  if (item.img_base64) {
+    const imgWidth = 110
+    const imgHeight = 70
+    const x = (pageWidth - imgWidth) / 2
+
+    if (yPosition + imgHeight > pageHeight - 60) {
+      doc.addPage()
+      yPosition = 20
+    }
+
+    doc.addImage(
+      `data:image/jpeg;base64,${item.img_base64}`,
+      'JPEG',
+      x,
+      yPosition,
+      imgWidth,
+      imgHeight
+    )
+
+    yPosition += imgHeight + 10
+  }
+
+  // ================= ISI DETAIL =================
+  doc.setFont("helvetica", "normal")
   const splitDetail = doc.splitTextToSize(item.detail_kegiatan, pageWidth - 30)
-  doc.text(splitDetail, 15, yPosition, { align: 'left' })
-  
-  // Tanda tangan (jika diperlukan)
-  const pageHeight = doc.internal.pageSize.getHeight()
+  doc.text(splitDetail, 15, yPosition)
+
+  // ================= TTD =================
   const signatureY = pageHeight - 50
-  
-  doc.setLineWidth(0.5)
   doc.line(pageWidth - 60, signatureY + 20, pageWidth - 15, signatureY + 20)
-  
+
   doc.text('Mengetahui,', pageWidth - 37, signatureY, { align: 'center' })
   doc.text('Drg. Wulandari M.H', pageWidth - 37, signatureY + 25, { align: 'center' })
   doc.text('Kepala Puskesmas Cicalengka DTP', pageWidth - 37, signatureY + 30, { align: 'center' })
-  
-  doc.text('', 15, signatureY) // Spasi
-  doc.text('', 15, signatureY + 25)
-  doc.text('', 15, signatureY + 30)
-  
-  // Nomor halaman
+
+  // ================= PAGE NUMBER =================
   const totalPages = doc.internal.getNumberOfPages()
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i)
     doc.setFontSize(10)
-    doc.text(`Halaman ${i} dari ${totalPages}`, pageWidth - 20, pageHeight - 10, { align: 'right' })
+    doc.text(
+      `Halaman ${i} dari ${totalPages}`,
+      pageWidth - 20,
+      pageHeight - 10,
+      { align: 'right' }
+    )
   }
-  
+
   doc.save(`Laporan-${item.judul_laporan}.pdf`)
 }
+
 
   if (loading) {
     return (
@@ -358,7 +370,14 @@ const handlePDF = (item) => {
                 {selectedKegiatan && (
                   <div className="alert alert-light border">
                     <p><strong>Nama:</strong> {selectedKegiatan.judul}</p>
-                    <p><strong>Tanggal:</strong> {selectedKegiatan.tanggal}</p>
+                    <p><strong>Tanggal:</strong>{' '}
+                      {new Date(selectedKegiatan.tanggal).toLocaleDateString('id-ID', {
+                        weekday: 'long',
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </p>
                     <p>
                       <strong>Waktu:</strong>{' '}
                       {selectedKegiatan.jam_mulai} - {selectedKegiatan.jam_selesai}
@@ -390,10 +409,28 @@ const handlePDF = (item) => {
                   type="file"
                   className="form-control"
                   accept="image/*"
-                  onChange={e =>
-                    setFormData({ ...formData, img: e.target.files[0] })
-                  }
+                  onChange={e => {
+                    const file = e.target.files[0]
+                    setFormData({ ...formData, img: file })
+
+                    if (file) {
+                      setPreviewImg(URL.createObjectURL(file))
+                    }
+                  }}
                 />
+                {previewImg && (
+                <div className="mt-3">
+                  <small className="text-muted">Preview Foto Kegiatan</small>
+                  <div className="border rounded p-2 mt-1 text-center">
+                    <img
+                      src={previewImg}
+                      alt="Preview"
+                      className="img-fluid rounded"
+                      style={{ maxHeight: '220px' }}
+                    />
+                  </div>
+                </div>
+              )}
               </div>
 
               <div className="modal-footer">

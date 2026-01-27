@@ -196,8 +196,8 @@ export default function DokterPage() {
 
       {/* STATUS CARD */}
       <div className="card border-0 shadow-sm mb-5">
-        <div className="card-header bg-success text-white py-3">
-          <h5 className="mb-0 fw-bold">
+        <div className="card-header bg-success ">
+          <h5 className="mb-0 fw-bold text-white py-3">
             <i className="fas fa-clock me-2" />
             Status Kehadiran Hari Ini
           </h5>
@@ -223,7 +223,7 @@ export default function DokterPage() {
       {/* TABLE JADWAL */}
       <div className="card border-0 shadow-sm">
         <div className="card-header bg-success text-white py-3">
-          <h5 className="mb-0 fw-bold">
+          <h5 className="mb-0 fw-bold text-white py-3">
             <i className="fas fa-calendar-alt me-2" />
             Jadwal Praktek Saya
           </h5>

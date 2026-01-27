@@ -406,7 +406,7 @@ export default function RiwayatPasien() {
 
                 <div className="card mb-4">
                   <div className="card-header bg-light">
-                    <strong>Alamat Lengkap</strong>
+                    <strong className="text-white">Alamat Lengkap</strong>
                   </div>
                   <div className="card-body">
                     <p className="mb-0">{selectedItem.alamat}</p>
@@ -415,7 +415,7 @@ export default function RiwayatPasien() {
 
                 <div className="card">
                   <div className="card-header bg-light">
-                    <strong>Informasi Tambahan</strong>
+                    <strong className="text-white">Informasi Tambahan</strong>
                   </div>
                   <div className="card-body">
                     <div className="row">

@@ -8,9 +8,27 @@ export default function KelolaKegiatanPage() {
   const [adminOptions, setAdminOptions] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [showJenisModal, setShowJenisModal] = useState(false)
+  const [jenisList, setJenisList] = useState([])
+  const [jenisNama, setJenisNama] = useState('')
 
   const [showModal, setShowModal] = useState(false)
   const [modalType, setModalType] = useState('add')
+
+  const fetchJenisKegiatan = async () => {
+  try {
+    const res = await fetch('http://localhost:5001/api/jenis-kegiatan')
+    const data = await res.json()
+    setJenisList(Array.isArray(data) ? data : [])
+  } catch (err) {
+    console.error(err)
+    setJenisList([])
+  }
+}
+useEffect(() => {
+  fetchData()
+  fetchJenisKegiatan()
+}, [])
 
   const [formData, setFormData] = useState({
     id: '',
@@ -24,12 +42,17 @@ export default function KelolaKegiatanPage() {
     jam_selesai: ''
   })
 
-  const jenisKegiatanOptions = [
-    { id: 1, nama: 'Penyuluhan', code: 'PY' },
-    { id: 2, nama: 'Vaksinasi', code: 'VK' },
-    { id: 3, nama: 'Rapat', code: 'RP' },
-    { id: 4, nama: 'Posyandu', code: 'PS' }
-  ]
+const jenisKegiatanOptions = [
+  { id: 1, nama: 'Imunisasi', code: 'IM' },
+  { id: 2, nama: 'Posyandu ILP', code: 'PS' },
+  { id: 3, nama: 'Penyuluhan Massal', code: 'PY' },
+  { id: 4, nama: 'Kunjungan Rumah', code: 'KR' },
+  { id: 5, nama: 'Konseling Kesehatan', code: 'KS' },
+  { id: 6, nama: 'Skrining Penyakit Degeneratif', code: 'SD' },
+  { id: 7, nama: 'GERMAS (Gerakan Masyarakat Hidup Sehat)', code: 'GM' },
+  { id: 8, nama: 'Kemitraan dengan Desa / Sekolah / Kader', code: 'KM' },
+  { id: 9, nama: 'Surveilans & Pembinaan Lingkungan', code: 'SL' }
+]
 
 // ================= FETCH =================
 const fetchData = async () => {
@@ -77,8 +100,6 @@ const fetchData = async () => {
   }
 }
 
-
-
   useEffect(() => {
     fetchData()
   }, [])
@@ -89,6 +110,32 @@ const fetchData = async () => {
     k.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     k.status?.toLowerCase().includes(searchTerm.toLowerCase())
   )
+  const handleSubmitJenis = async (e) => {
+    e.preventDefault()
+    if (!jenisNama.trim()) {
+      alert('Nama jenis kegiatan wajib diisi')
+      return
+    }
+
+    try {
+      const res = await fetch('http://localhost:5001/api/jenis-kegiatan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jenis_kegiatan: jenisNama.trim() })
+      })
+
+      if (!res.ok) throw new Error('Gagal menambah jenis')
+
+      alert('Jenis kegiatan berhasil ditambahkan')
+      setJenisNama('')
+      setShowJenisModal(false)
+      fetchJenisKegiatan()
+
+    } catch (err) {
+      console.error(err)
+      alert('Terjadi kesalahan saat menyimpan jenis kegiatan')
+    }
+  }
 
   // ================= GENERATE ID =================
   const handleJenisChange = (e) => {
@@ -401,6 +448,44 @@ const fetchData = async () => {
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary"
                   onClick={()=>setShowModal(false)}>Batal</button>
+                <button className="btn btn-success">Simpan</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      
+      {showJenisModal && (
+        <div className="modal fade show d-block bg-dark bg-opacity-50">
+          <div className="modal-dialog">
+            <form className="modal-content" onSubmit={handleSubmitJenis}>
+              <div className="modal-header bg-success text-white">
+                <h5>Tambah Jenis Kegiatan</h5>
+              </div>
+
+              <div className="modal-body">
+                <input
+                  className="form-control mb-3"
+                  placeholder="Nama Jenis Kegiatan"
+                  value={jenisNama}
+                  onChange={e => setJenisNama(e.target.value)}
+                  required
+                />
+
+                <ul className="list-group">
+                  {jenisList.map(j => (
+                    <li key={j.id} className="list-group-item d-flex justify-content-between">
+                      {j.jenis_kegiatan}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary"
+                  onClick={() => setShowJenisModal(false)}>
+                  Batal
+                </button>
                 <button className="btn btn-success">Simpan</button>
               </div>
             </form>

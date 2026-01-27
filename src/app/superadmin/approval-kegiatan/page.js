@@ -7,6 +7,10 @@ export default function ApprovalKegiatanPage() {
   const [loading, setLoading] = useState(true)
 
   const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+
   const [showModal, setShowModal] = useState(false)
   const [selectedData, setSelectedData] = useState(null)
 
@@ -17,14 +21,11 @@ export default function ApprovalKegiatanPage() {
 
       const res = await fetch(
         'http://localhost:5001/api/superadmin/kegiatan',
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       )
 
       const data = await res.json()
 
-      // 🔐 AMAN: pastikan selalu array
       const list = Array.isArray(data)
         ? data
         : Array.isArray(data.data)
@@ -48,11 +49,19 @@ export default function ApprovalKegiatanPage() {
   // ================= FILTER =================
   const filteredList = kegiatanList.filter(k => {
     const keyword = searchTerm.toLowerCase()
-    return (
+
+    const matchSearch =
       k.judul?.toLowerCase().includes(keyword) ||
-      k.id?.toLowerCase().includes(keyword) ||
-      k.status?.toLowerCase().includes(keyword)
-    )
+      k.id?.toLowerCase().includes(keyword)
+
+    const matchStatus =
+      !statusFilter || k.status === statusFilter
+
+    const kegiatanDate = new Date(k.tanggal)
+    const matchStart = startDate ? kegiatanDate >= new Date(startDate) : true
+    const matchEnd = endDate ? kegiatanDate <= new Date(endDate) : true
+
+    return matchSearch && matchStatus && matchStart && matchEnd
   })
 
   // ================= ACTION =================
@@ -76,6 +85,17 @@ export default function ApprovalKegiatanPage() {
     fetchData()
   }
 
+  const formatTanggal = (date) =>
+    date
+      ? new Date(date).toLocaleDateString('id-ID', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric'
+        })
+      : '-'
+
+  const formatJam = (time) => (time ? time.slice(0, 5) : '-')
+
   if (loading) {
     return (
       <div className="text-center py-5">
@@ -83,19 +103,6 @@ export default function ApprovalKegiatanPage() {
       </div>
     )
   }
-const formatTanggal = (date) => {
-  if (!date) return '-'
-  return new Date(date).toLocaleDateString('id-ID', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
-  })
-}
-
-const formatJam = (time) => {
-  if (!time) return '-'
-  return time.slice(0, 5) // HH:mm
-}
 
   // ================= RENDER =================
   return (
@@ -103,13 +110,62 @@ const formatJam = (time) => {
       <h4 className="mb-3">Approval Kegiatan</h4>
 
       {/* FILTER */}
-      <div className="d-flex gap-2 mb-3">
-        <input
-          className="form-control w-25"
-          placeholder="Cari ID / Judul / Status"
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-        />
+      <div className="card mb-3">
+        <div className="card-body d-flex flex-wrap gap-2 align-items-end">
+          <input
+            className="form-control"
+            style={{ maxWidth: 250 }}
+            placeholder="Cari ID / Judul"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+
+          <div>
+            <label className="small text-muted">Dari tanggal</label>
+            <input
+              type="date"
+              className="form-control"
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="small text-muted">Sampai tanggal</label>
+            <input
+              type="date"
+              className="form-control"
+              value={endDate}
+              onChange={e => setEndDate(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="small text-muted">Status</label>
+            <select
+              className="form-select"
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+            >
+              <option value="">Semua</option>
+              <option value="menunggu">Menunggu</option>
+              <option value="disetujui">Disetujui</option>
+              <option value="ditolak">Ditolak</option>
+            </select>
+          </div>
+
+          <button
+            className="btn btn-secondary"
+            onClick={() => {
+              setSearchTerm('')
+              setStartDate('')
+              setEndDate('')
+              setStatusFilter('')
+            }}
+          >
+            Reset
+          </button>
+        </div>
       </div>
 
       {/* TABLE */}
@@ -122,7 +178,7 @@ const formatJam = (time) => {
               <th>Tanggal</th>
               <th>Lokasi</th>
               <th>Status</th>
-              <th width="180" className="text-center">Aksi</th>
+              <th className="text-center">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -138,22 +194,24 @@ const formatJam = (time) => {
               <tr key={item.id}>
                 <td>{item.id}</td>
                 <td>{item.judul}</td>
-                <td>{new Date(item.tanggal).toLocaleDateString('id-ID')}</td>
+                <td>{formatTanggal(item.tanggal)}</td>
                 <td>{item.nama_lokasi || '-'}</td>
                 <td>
-                  <span className={`badge ${
-                    item.status === 'menunggu'
-                      ? 'bg-warning text-dark'
-                      : item.status === 'disetujui'
-                      ? 'bg-success'
-                      : 'bg-danger'
-                  }`}>
+                  <span
+                    className={`badge ${
+                      item.status === 'menunggu'
+                        ? 'bg-warning text-dark'
+                        : item.status === 'disetujui'
+                        ? 'bg-success'
+                        : 'bg-danger'
+                    }`}
+                  >
                     {item.status}
                   </span>
                 </td>
                 <td className="text-center">
                   <button
-                    className="btn btn-info btn-sm me-1"
+                    className="btn btn-info btn-sm"
                     onClick={() => openDetail(item)}
                   >
                     Detail
@@ -173,15 +231,14 @@ const formatJam = (time) => {
             <div className="modal-dialog modal-lg modal-dialog-centered">
               <div className="modal-content shadow border-0">
                 <div className="modal-header bg-success text-white">
-                  <h5>Detail Kegiatan & Laporan</h5>
+                  <h5>Detail Kegiatan</h5>
                   <button
                     className="btn-close btn-close-white"
                     onClick={() => setShowModal(false)}
-                  ></button>
+                  />
                 </div>
 
                 <div className="modal-body">
-                  <h6 className="fw-bold">Informasi Kegiatan</h6>
                   <table className="table table-sm">
                     <tbody>
                       <tr><th>ID</th><td>{selectedData.id}</td></tr>
@@ -189,36 +246,15 @@ const formatJam = (time) => {
                       <tr>
                         <th>Waktu</th>
                         <td>
-                          {formatTanggal(selectedData.tanggal)} |  
-                          {formatJam(selectedData.jam_mulai)} - {formatJam(selectedData.jam_selesai)} WIB
+                          {formatTanggal(selectedData.tanggal)} |{' '}
+                          {formatJam(selectedData.jam_mulai)} -{' '}
+                          {formatJam(selectedData.jam_selesai)} WIB
                         </td>
                       </tr>
                       <tr><th>Lokasi</th><td>{selectedData.nama_lokasi}</td></tr>
                       <tr><th>Deskripsi</th><td>{selectedData.deskripsi}</td></tr>
                     </tbody>
                   </table>
-
-                  <hr />
-
-                  <h6 className="fw-bold">Laporan Kegiatan</h6>
-                  {selectedData.laporan ? (
-                    <>
-                      <p><strong>Judul:</strong> {selectedData.laporan.judul_laporan}</p>
-                      <p>{selectedData.laporan.detail_kegiatan}</p>
-
-                      {selectedData.laporan.img && (
-                        <img
-                          src={`data:image/jpeg;base64,${selectedData.laporan.img}`}
-                          className="img-fluid rounded"
-                          style={{ maxHeight: 250 }}
-                        />
-                      )}
-                    </>
-                  ) : (
-                    <span className="badge bg-secondary">
-                      Belum ada laporan
-                    </span>
-                  )}
                 </div>
 
                 <div className="modal-footer">

@@ -90,7 +90,7 @@ export default function SuperAdminLayout({ children }) {
                 <i className="fas fa-user-shield fa-2x"></i>
               </div>
               <div>
-                <h1 className="h5 mb-0 fw-bold">SIAPCICALENGKA</h1>
+                <h1 className="h5 mb-0 fw-bold">SIAPCicalengka</h1>
                 <small>Super Admin Panel</small>
               </div>
             </div>

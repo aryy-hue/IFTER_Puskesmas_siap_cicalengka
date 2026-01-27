@@ -66,9 +66,11 @@ export default function LoginPage() {
         willClose: () => {
              // Redirect Sesuai Role
              if (user.role === 'dokter') {
-                 router.replace('/dashboarddokter')
-             } else if (user.role === 'admin' || user.role === 'superadmin') {
+                 router.replace('/dokter')
+             } else if (user.role === 'admin') {
                  router.replace('/admin')
+             } else if (user.role === 'superadmin') {
+                 router.replace('/superadmin')                 
              } else {
                  router.replace('/')
              }

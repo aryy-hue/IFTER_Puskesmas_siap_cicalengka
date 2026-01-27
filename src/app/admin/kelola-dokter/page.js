@@ -178,7 +178,7 @@ export default function KelolaDokterPage() {
       },
       body: JSON.stringify({
         dokter_id: selectedDokter.id,
-        poli_id: selectedDokter.poli_id,
+        poli_id: formJadwal.poli_id,
         hari: formJadwal.hari,
         jam_mulai: formJadwal.jam_mulai,
         jam_selesai: formJadwal.jam_selesai,
@@ -194,8 +194,8 @@ export default function KelolaDokterPage() {
       {/* HEADER + BUTTON */}
       <div className="mb-4 d-flex justify-content-between align-items-center">
         <div>
-          <h1 className="h3 text-success">Kelola Dokter</h1>
-          <p className="text-muted">Kelola data dokter dan jadwal praktik</p>
+          <h1 className="h3 text-success">Kelola Petugas</h1>
+          <p className="text-muted">Kelola data Petugas Kesehatan dan Jadwal Praktik</p>
         </div>
 
         <button
@@ -203,7 +203,7 @@ export default function KelolaDokterPage() {
           onClick={() => setShowTambahDokter(true)}
         >
           <i className="fas fa-plus me-2"></i>
-          Tambah Dokter
+          Tambah Petugas
         </button>
       </div>
       {/* TABLE */}
@@ -273,7 +273,7 @@ export default function KelolaDokterPage() {
                     user_id: e.target.value
                 })}
                 >
-                <option value="">-- Pilih User Dokter --</option>
+                <option value="">-- Pilih Petugas --</option>
                 {userDokterList.map(u => (
                 <option key={u.id} value={u.id}>
                     {u.full_name} ({u.username})

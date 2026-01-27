@@ -119,7 +119,7 @@ export default function StatistikPenyakit() {
           <p className="text-muted mb-0">Analisis data riwayat penyakit berdasarkan lokasi dan waktu</p>
         </div>
         <div className="badge bg-success p-3">
-          <h4 className="mb-0">{totalKasus} Total Kasus</h4>
+          <h4 className="mb-0 text-white">{totalKasus} Total Kasus</h4>
         </div>
       </div>
 
@@ -202,7 +202,7 @@ export default function StatistikPenyakit() {
         <div className="col-lg-6 mb-4">
           <div className="card shadow-sm h-100 border-0">
             <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-              <h5 className="mb-0">Distribusi Penyakit</h5>
+              <h5 className="mb-0 text-white">Distribusi Penyakit</h5>
               <span className="badge bg-light text-primary">
                 {chartData.length} Jenis Penyakit
               </span>
@@ -275,7 +275,7 @@ export default function StatistikPenyakit() {
         <div className="col-lg-6 mb-4">
           <div className="card shadow-sm h-100 border-0">
             <div className="card-header bg-success text-white d-flex justify-content-between align-items-center">
-              <h5 className="mb-0">Distribusi per Lokasi</h5>
+              <h5 className="mb-0 text-white">Distribusi per Lokasi</h5>
               <span className="badge bg-light text-success">
                 {distribusiData.length} Lokasi
               </span>
@@ -332,7 +332,7 @@ export default function StatistikPenyakit() {
         <div className="col-12">
           <div className="card shadow-sm border-0">
             <div className="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-              <h5 className="mb-0">Trend Penyakit (Berdasarkan Tanggal)</h5>
+              <h5 className="mb-0 text-white">Trend Penyakit (Berdasarkan Tanggal)</h5>
               <span className="badge bg-dark">
                 {startDate ? startDate.toLocaleDateString('id-ID') : 'Semua Tanggal'} - 
                 {endDate ? endDate.toLocaleDateString('id-ID') : 'Sekarang'}
@@ -368,7 +368,7 @@ export default function StatistikPenyakit() {
         <div className="col-12">
           <div className="card shadow-sm border-0">
             <div className="card-header bg-info text-white">
-              <h5 className="mb-0">Detail Data Statistik</h5>
+              <h5 className="mb-0 text-white">Detail Data Statistik</h5>
             </div>
             <div className="card-body">
               <div className="table-responsive">

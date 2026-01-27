@@ -41,11 +41,12 @@ const openPoliModal = async (poli) => {
   setLoadingJadwal(true)
 
   try {
-    const res = await fetch(`http://localhost:5001/api/jadwal/poli/${poli.id}`)
+    const res = await fetch(
+      `http://localhost:5001/api/jadwal/poli/${poli.id}`
+    )
     const data = await res.json()
     setJadwalData(Array.isArray(data) ? data : [])
-  } catch (err) {
-    console.error(err)
+  } catch {
     setJadwalData([])
   } finally {
     setLoadingJadwal(false)
@@ -117,16 +118,19 @@ const openPoliModal = async (poli) => {
             {poliData.map(poli => (
               <div key={poli.id} className="col-md-4 mb-4">
                 <div
-                  className={`card h-100 border-${poli.color}`}
+                  className="card h-100 border-success"
                   style={{ cursor: 'pointer' }}
                   onClick={() => openPoliModal(poli)}
                 >
-                  <div className={`card-header bg-${poli.color} text-white`}>
-                    <i className={`${poli.icon} me-2`}></i>
-                    {poli.name}
+                  <div className="card-header bg-success text-white d-flex align-items-center gap-2">
+                    <i className={`${poli.icon}`}></i>
+                    {poli.nama_poli}
                   </div>
-                  <div className="card-body">
-                    <p>{poli.description}</p>
+                  <div
+                    className="card-body"
+                    style={{ whiteSpace: 'pre-line', lineHeight: '1.6' }}
+                  >
+                    {poli.deskripsi}
                   </div>
                 </div>
               </div>
@@ -144,7 +148,10 @@ const openPoliModal = async (poli) => {
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header bg-success text-white">
-                <h5 className="modal-title">{selectedPoli.name}</h5>
+                  <h5 className="modal-title">
+                    <i className={`${selectedPoli.icon} me-2`}></i>
+                    {selectedPoli.nama_poli}
+                  </h5>
                 <button
                   className="btn-close btn-close-white"
                   onClick={closeModal}

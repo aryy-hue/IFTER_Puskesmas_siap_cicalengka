@@ -14,7 +14,7 @@ export function middleware(req) {
   if (!userCookie) {
     console.log('⚠️  Tidak ada user cookie')
     // Lindungi admin & dokter
-    if (path.startsWith('/admin') || path.startsWith('/dashboarddokter')) {
+    if (path.startsWith('/admin') || path.startsWith('/dokter')) {
       return NextResponse.redirect(new URL('/login', req.url))
     }
     return NextResponse.next()
@@ -37,8 +37,8 @@ export function middleware(req) {
   }
 
   // ❌ Admin masuk dashboard dokter
-  if (path.startsWith('/dashboarddokter') && user.role !== 'dokter') {
-    console.log(`🚫 Non-dokter (role: ${user.role}) coba akses /dashboarddokter, redirect ke /`)
+  if (path.startsWith('/dokter') && user.role !== 'dokter') {
+    console.log(`🚫 Non-dokter (role: ${user.role}) coba akses /dokter, redirect ke /`)
     return NextResponse.redirect(new URL('/', req.url))
   }
 
@@ -48,5 +48,5 @@ export function middleware(req) {
 
 // ⛔ Jangan pasang middleware ke static & api
 export const config = {
-  matcher: ['/admin/:path*', '/dashboarddokter/:path*']
+  matcher: ['/admin/:path*', '/dokter/:path*']
 }
